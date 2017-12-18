@@ -25,3 +25,8 @@ openocd/src/jtag/drivers/libjaylink/Makefile
 openocd/src/jtag/drivers/libjaylink/libjaylink/Makefile
 openocd/src/jtag/drivers/libjaylink/libjaylink/version.h
 stamp-h1
+
+# additional make output
+openocd/src/jtag/minidriver_imp.h
+openocd/src/openocd
+openocd/src/startup_tcl.inc
