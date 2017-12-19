@@ -33,6 +33,7 @@ NOR_DRIVERS = \
 	%D%/lpcspifi.c \
 	%D%/mdr.c \
 	%D%/mrvlqspi.c \
+	%D%/msp432.c \
 	%D%/niietcm4.c \
 	%D%/non_cfi.c \
 	%D%/nrf51.c \
@@ -61,6 +62,7 @@ NORHEADERS = \
 	%D%/cfi.h \
 	%D%/driver.h \
 	%D%/imp.h \
+	%D%/msp432.h \
 	%D%/non_cfi.h \
 	%D%/ocl.h \
 	%D%/spi.h
