@@ -17,6 +17,7 @@ NOR_DRIVERS = \
 	%D%/at91sam7.c \
 	%D%/atsamv.c \
 	%D%/avrf.c \
+	%D%/cc26xx.c \
 	%D%/cc3220sf.c \
 	%D%/cfi.c \
 	%D%/dsp5680xx_flash.c \
@@ -60,6 +61,7 @@ NOR_DRIVERS = \
 
 NORHEADERS = \
 	%D%/core.h \
+	%D%/cc26xx.h \
 	%D%/cc3220sf.h \
 	%D%/cfi.h \
 	%D%/driver.h \
