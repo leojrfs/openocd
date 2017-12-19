@@ -18,6 +18,7 @@ config.log
 config.status
 configure.gnu
 Doxyfile
+doxygen.log
 libjaylink.pc
 libtool
 openocd/Makefile
@@ -30,3 +31,43 @@ stamp-h1
 openocd/src/jtag/minidriver_imp.h
 openocd/src/openocd
 openocd/src/startup_tcl.inc
+
+# document output
+openocd/doc/openocd.aux
+openocd/doc/openocd.cp
+openocd/doc/openocd.cps
+openocd/doc/openocd.fn
+openocd/doc/openocd.fns
+openocd/doc/openocd.html
+openocd/doc/openocd.ky
+openocd/doc/openocd.log
+openocd/doc/openocd.pdf
+openocd/doc/openocd.pg
+openocd/doc/openocd.t2p
+openocd/doc/openocd.toc
+openocd/doc/openocd.tp
+openocd/doc/openocd.vr
+
+# editor files
+*.swp
+
+# coexist with quilt
+patches
+*.patch
+
+# Eclipse stuff
+.project
+.cproject
+.settings
+
+# Emacs temp files
+*~
+
+# Emacs TAGS file
+TAGS
+
+# CScope database files
+*cscope.out
+
+# ctags tag files
+tags
