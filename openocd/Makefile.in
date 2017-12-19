@@ -238,26 +238,26 @@ am__objects_3 = src/flash/nor/aduc702x.lo src/flash/nor/aducm360.lo \
 	src/flash/nor/at91sam4l.lo src/flash/nor/at91samd.lo \
 	src/flash/nor/at91sam3.lo src/flash/nor/at91sam7.lo \
 	src/flash/nor/atsamv.lo src/flash/nor/avrf.lo \
-	src/flash/nor/cfi.lo src/flash/nor/dsp5680xx_flash.lo \
-	src/flash/nor/efm32.lo src/flash/nor/em357.lo \
-	src/flash/nor/faux.lo src/flash/nor/fm3.lo \
-	src/flash/nor/fm4.lo src/flash/nor/jtagspi.lo \
-	src/flash/nor/kinetis.lo src/flash/nor/kinetis_ke.lo \
-	src/flash/nor/lpc2000.lo src/flash/nor/lpc288x.lo \
-	src/flash/nor/lpc2900.lo src/flash/nor/lpcspifi.lo \
-	src/flash/nor/mdr.lo src/flash/nor/mrvlqspi.lo \
-	src/flash/nor/msp432.lo src/flash/nor/niietcm4.lo \
-	src/flash/nor/non_cfi.lo src/flash/nor/nrf51.lo \
-	src/flash/nor/numicro.lo src/flash/nor/ocl.lo \
-	src/flash/nor/pic32mx.lo src/flash/nor/psoc4.lo \
-	src/flash/nor/sim3x.lo src/flash/nor/spi.lo \
-	src/flash/nor/stmsmi.lo src/flash/nor/stellaris.lo \
-	src/flash/nor/stm32f1x.lo src/flash/nor/stm32f2x.lo \
-	src/flash/nor/stm32lx.lo src/flash/nor/stm32l4x.lo \
-	src/flash/nor/str7x.lo src/flash/nor/str9x.lo \
-	src/flash/nor/str9xpec.lo src/flash/nor/tms470.lo \
-	src/flash/nor/virtual.lo src/flash/nor/xmc1xxx.lo \
-	src/flash/nor/xmc4xxx.lo
+	src/flash/nor/cc3220sf.lo src/flash/nor/cfi.lo \
+	src/flash/nor/dsp5680xx_flash.lo src/flash/nor/efm32.lo \
+	src/flash/nor/em357.lo src/flash/nor/faux.lo \
+	src/flash/nor/fm3.lo src/flash/nor/fm4.lo \
+	src/flash/nor/jtagspi.lo src/flash/nor/kinetis.lo \
+	src/flash/nor/kinetis_ke.lo src/flash/nor/lpc2000.lo \
+	src/flash/nor/lpc288x.lo src/flash/nor/lpc2900.lo \
+	src/flash/nor/lpcspifi.lo src/flash/nor/mdr.lo \
+	src/flash/nor/mrvlqspi.lo src/flash/nor/msp432.lo \
+	src/flash/nor/niietcm4.lo src/flash/nor/non_cfi.lo \
+	src/flash/nor/nrf51.lo src/flash/nor/numicro.lo \
+	src/flash/nor/ocl.lo src/flash/nor/pic32mx.lo \
+	src/flash/nor/psoc4.lo src/flash/nor/sim3x.lo \
+	src/flash/nor/spi.lo src/flash/nor/stmsmi.lo \
+	src/flash/nor/stellaris.lo src/flash/nor/stm32f1x.lo \
+	src/flash/nor/stm32f2x.lo src/flash/nor/stm32lx.lo \
+	src/flash/nor/stm32l4x.lo src/flash/nor/str7x.lo \
+	src/flash/nor/str9x.lo src/flash/nor/str9xpec.lo \
+	src/flash/nor/tms470.lo src/flash/nor/virtual.lo \
+	src/flash/nor/xmc1xxx.lo src/flash/nor/xmc4xxx.lo
 am_src_flash_nor_libocdflashnor_la_OBJECTS = src/flash/nor/core.lo \
 	src/flash/nor/tcl.lo $(am__objects_3) src/flash/nor/drivers.lo \
 	$(am__objects_2)
@@ -1479,6 +1479,7 @@ NOR_DRIVERS = \
 	src/flash/nor/at91sam7.c \
 	src/flash/nor/atsamv.c \
 	src/flash/nor/avrf.c \
+	src/flash/nor/cc3220sf.c \
 	src/flash/nor/cfi.c \
 	src/flash/nor/dsp5680xx_flash.c \
 	src/flash/nor/efm32.c \
@@ -1521,6 +1522,7 @@ NOR_DRIVERS = \
 
 NORHEADERS = \
 	src/flash/nor/core.h \
+	src/flash/nor/cc3220sf.h \
 	src/flash/nor/cfi.h \
 	src/flash/nor/driver.h \
 	src/flash/nor/imp.h \
@@ -1740,6 +1742,8 @@ src/flash/nor/at91sam7.lo: src/flash/nor/$(am__dirstamp) \
 src/flash/nor/atsamv.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
 src/flash/nor/avrf.lo: src/flash/nor/$(am__dirstamp) \
+	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
+src/flash/nor/cc3220sf.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
 src/flash/nor/cfi.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
@@ -2560,6 +2564,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/at91samd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/atsamv.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/avrf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/cc3220sf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/cfi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/core.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/flash/nor/$(DEPDIR)/drivers.Plo@am__quote@
