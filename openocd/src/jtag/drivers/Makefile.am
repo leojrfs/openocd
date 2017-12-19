@@ -144,13 +144,14 @@ endif
 if BCM2835GPIO
 DRIVERFILES += %D%/bcm2835gpio.c
 endif
-
 if OPENJTAG
 DRIVERFILES += %D%/openjtag.c
 endif
-
 if CMSIS_DAP
 DRIVERFILES += %D%/cmsis_dap_usb.c
+endif
+if XDS110
+DRIVERFILES += %D%/xds110.c
 endif
 
 DRIVERHEADERS = \

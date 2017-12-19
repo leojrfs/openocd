@@ -181,12 +181,13 @@ bin_PROGRAMS = src/openocd$(EXEEXT)
 @BCM2835GPIO_TRUE@@MINIDRIVER_FALSE@am__append_67 = src/jtag/drivers/bcm2835gpio.c
 @MINIDRIVER_FALSE@@OPENJTAG_TRUE@am__append_68 = src/jtag/drivers/openjtag.c
 @CMSIS_DAP_TRUE@@MINIDRIVER_FALSE@am__append_69 = src/jtag/drivers/cmsis_dap_usb.c
-@MINIDRIVER_FALSE@am__append_70 = $(top_builddir)/src/jtag/drivers/libocdjtagdrivers.la
+@MINIDRIVER_FALSE@@XDS110_TRUE@am__append_70 = src/jtag/drivers/xds110.c
+@MINIDRIVER_FALSE@am__append_71 = $(top_builddir)/src/jtag/drivers/libocdjtagdrivers.la
 
 # FD_* macros are sloppy with their signs on MinGW32 platform
-@IS_MINGW_TRUE@am__append_71 = -Wno-sign-compare
-# FD_* macros are sloppy with their signs on MinGW32 platform
 @IS_MINGW_TRUE@am__append_72 = -Wno-sign-compare
+# FD_* macros are sloppy with their signs on MinGW32 platform
+@IS_MINGW_TRUE@am__append_73 = -Wno-sign-compare
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config_subdir.m4 \
@@ -353,8 +354,8 @@ am__src_jtag_drivers_libocdjtagdrivers_la_SOURCES_DIST =  \
 	src/jtag/drivers/osbdm.c src/jtag/drivers/opendous.c \
 	src/jtag/drivers/sysfsgpio.c src/jtag/drivers/bcm2835gpio.c \
 	src/jtag/drivers/openjtag.c src/jtag/drivers/cmsis_dap_usb.c \
-	src/jtag/drivers/bitbang.h src/jtag/drivers/bitq.h \
-	src/jtag/drivers/libusb0_common.h \
+	src/jtag/drivers/xds110.c src/jtag/drivers/bitbang.h \
+	src/jtag/drivers/bitq.h src/jtag/drivers/libusb0_common.h \
 	src/jtag/drivers/libusb1_common.h \
 	src/jtag/drivers/libusb_common.h \
 	src/jtag/drivers/minidriver_imp.h src/jtag/drivers/mpsse.h \
@@ -404,7 +405,8 @@ am__src_jtag_drivers_libocdjtagdrivers_la_SOURCES_DIST =  \
 @BCM2835GPIO_TRUE@@MINIDRIVER_FALSE@am__objects_32 = src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-bcm2835gpio.lo
 @MINIDRIVER_FALSE@@OPENJTAG_TRUE@am__objects_33 = src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-openjtag.lo
 @CMSIS_DAP_TRUE@@MINIDRIVER_FALSE@am__objects_34 = src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-cmsis_dap_usb.lo
-@MINIDRIVER_FALSE@am__objects_35 = src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-driver.lo \
+@MINIDRIVER_FALSE@@XDS110_TRUE@am__objects_35 = src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo
+@MINIDRIVER_FALSE@am__objects_36 = src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-driver.lo \
 @MINIDRIVER_FALSE@	$(am__objects_6) $(am__objects_7) \
 @MINIDRIVER_FALSE@	$(am__objects_8) $(am__objects_9) \
 @MINIDRIVER_FALSE@	$(am__objects_10) $(am__objects_11) \
@@ -419,9 +421,9 @@ am__src_jtag_drivers_libocdjtagdrivers_la_SOURCES_DIST =  \
 @MINIDRIVER_FALSE@	$(am__objects_28) $(am__objects_29) \
 @MINIDRIVER_FALSE@	$(am__objects_30) $(am__objects_31) \
 @MINIDRIVER_FALSE@	$(am__objects_32) $(am__objects_33) \
-@MINIDRIVER_FALSE@	$(am__objects_34)
+@MINIDRIVER_FALSE@	$(am__objects_34) $(am__objects_35)
 @MINIDRIVER_FALSE@am_src_jtag_drivers_libocdjtagdrivers_la_OBJECTS =  \
-@MINIDRIVER_FALSE@	$(am__objects_35) $(am__objects_2)
+@MINIDRIVER_FALSE@	$(am__objects_36) $(am__objects_2)
 src_jtag_drivers_libocdjtagdrivers_la_OBJECTS =  \
 	$(am_src_jtag_drivers_libocdjtagdrivers_la_OBJECTS)
 @MINIDRIVER_FALSE@am_src_jtag_drivers_libocdjtagdrivers_la_rpath =
@@ -431,13 +433,13 @@ am__src_jtag_drivers_usb_blaster_libocdusbblaster_la_SOURCES_DIST =  \
 	src/jtag/drivers/usb_blaster/ublast_access.h \
 	src/jtag/drivers/usb_blaster/ublast_access_ftdi.c \
 	src/jtag/drivers/usb_blaster/ublast2_access_libusb.c
-@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@@USB_BLASTER_TRUE@am__objects_36 = src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-ublast_access_ftdi.lo
-@MINIDRIVER_FALSE@@USB_BLASTER_2_TRUE@@USB_BLASTER_DRIVER_TRUE@am__objects_37 = src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-ublast2_access_libusb.lo
-@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@am__objects_38 = src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.lo \
-@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@	$(am__objects_36) \
-@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@	$(am__objects_37)
-@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@am_src_jtag_drivers_usb_blaster_libocdusbblaster_la_OBJECTS =  \
+@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@@USB_BLASTER_TRUE@am__objects_37 = src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-ublast_access_ftdi.lo
+@MINIDRIVER_FALSE@@USB_BLASTER_2_TRUE@@USB_BLASTER_DRIVER_TRUE@am__objects_38 = src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-ublast2_access_libusb.lo
+@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@am__objects_39 = src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.lo \
+@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@	$(am__objects_37) \
 @MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@	$(am__objects_38)
+@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@am_src_jtag_drivers_usb_blaster_libocdusbblaster_la_OBJECTS =  \
+@MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@	$(am__objects_39)
 src_jtag_drivers_usb_blaster_libocdusbblaster_la_OBJECTS = $(am_src_jtag_drivers_usb_blaster_libocdusbblaster_la_OBJECTS)
 @MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@am_src_jtag_drivers_usb_blaster_libocdusbblaster_la_rpath =
 src_jtag_hla_libocdhla_la_LIBADD =
@@ -454,7 +456,7 @@ src_jtag_hla_libocdhla_la_OBJECTS =  \
 	$(am_src_jtag_hla_libocdhla_la_OBJECTS)
 @HLADAPTER_TRUE@@MINIDRIVER_FALSE@am_src_jtag_hla_libocdhla_la_rpath =
 src_jtag_libjtag_la_DEPENDENCIES = $(am__append_17) $(am__append_19) \
-	$(am__append_70)
+	$(am__append_71)
 am__src_jtag_libjtag_la_SOURCES_DIST = src/jtag/adapter.c \
 	src/jtag/core.c src/jtag/interface.c src/jtag/interfaces.c \
 	src/jtag/tcl.c src/jtag/commands.h src/jtag/driver.h \
@@ -464,15 +466,15 @@ am__src_jtag_libjtag_la_SOURCES_DIST = src/jtag/adapter.c \
 	src/jtag/minidummy/jtag_minidriver.h src/jtag/swd.h \
 	src/jtag/tcl.h src/jtag/zy1000/zy1000.c \
 	src/jtag/minidummy/minidummy.c src/jtag/commands.c
-@MINIDRIVER_TRUE@@ZY1000_TRUE@am__objects_39 =  \
+@MINIDRIVER_TRUE@@ZY1000_TRUE@am__objects_40 =  \
 @MINIDRIVER_TRUE@@ZY1000_TRUE@	src/jtag/zy1000/zy1000.lo
-@MINIDRIVER_DUMMY_TRUE@@MINIDRIVER_TRUE@am__objects_40 = src/jtag/minidummy/minidummy.lo \
+@MINIDRIVER_DUMMY_TRUE@@MINIDRIVER_TRUE@am__objects_41 = src/jtag/minidummy/minidummy.lo \
 @MINIDRIVER_DUMMY_TRUE@@MINIDRIVER_TRUE@	src/jtag/commands.lo
-@MINIDRIVER_FALSE@am__objects_41 = src/jtag/commands.lo
-am__objects_42 = $(am__objects_39) $(am__objects_40) $(am__objects_41)
+@MINIDRIVER_FALSE@am__objects_42 = src/jtag/commands.lo
+am__objects_43 = $(am__objects_40) $(am__objects_41) $(am__objects_42)
 am_src_jtag_libjtag_la_OBJECTS = src/jtag/adapter.lo src/jtag/core.lo \
 	src/jtag/interface.lo src/jtag/interfaces.lo src/jtag/tcl.lo \
-	$(am__objects_42)
+	$(am__objects_43)
 src_jtag_libjtag_la_OBJECTS = $(am_src_jtag_libjtag_la_OBJECTS)
 src_libopenocd_la_DEPENDENCIES = src/xsvf/libxsvf.la src/svf/libsvf.la \
 	src/pld/libpld.la src/jtag/libjtag.la \
@@ -598,47 +600,47 @@ am__src_target_libtarget_la_SOURCES_DIST = src/target/algorithm.c \
 	src/target/nds32_v3.h src/target/nds32_v3m.h \
 	src/target/nds32_aice.h src/target/lakemont.h \
 	src/target/x86_32_common.h
-am__objects_43 = src/target/algorithm.lo src/target/register.lo \
+am__objects_44 = src/target/algorithm.lo src/target/register.lo \
 	src/target/image.lo src/target/breakpoints.lo \
 	src/target/target.lo src/target/target_request.lo \
 	src/target/testee.lo src/target/smp.lo
-@OOCD_TRACE_TRUE@am__objects_44 = src/target/oocd_trace.lo
-am__objects_45 = src/target/arm_dpm.lo src/target/arm_jtag.lo \
+@OOCD_TRACE_TRUE@am__objects_45 = src/target/oocd_trace.lo
+am__objects_46 = src/target/arm_dpm.lo src/target/arm_jtag.lo \
 	src/target/arm_disassembler.lo src/target/arm_simulator.lo \
 	src/target/arm_semihosting.lo src/target/arm_adi_v5.lo \
 	src/target/armv7a_cache.lo src/target/armv7a_cache_l2x.lo \
 	src/target/adi_v5_jtag.lo src/target/adi_v5_swd.lo \
 	src/target/embeddedice.lo src/target/trace.lo \
-	src/target/etb.lo src/target/etm.lo $(am__objects_44) \
+	src/target/etb.lo src/target/etm.lo $(am__objects_45) \
 	src/target/etm_dummy.lo
-am__objects_46 = src/target/arm7_9_common.lo src/target/arm7tdmi.lo \
+am__objects_47 = src/target/arm7_9_common.lo src/target/arm7tdmi.lo \
 	src/target/arm720t.lo src/target/arm9tdmi.lo \
 	src/target/arm920t.lo src/target/arm966e.lo \
 	src/target/arm946e.lo src/target/arm926ejs.lo \
 	src/target/feroceon.lo
-am__objects_47 = src/target/armv4_5.lo src/target/armv4_5_mmu.lo \
-	src/target/armv4_5_cache.lo $(am__objects_46)
-am__objects_48 = src/target/arm11.lo src/target/arm11_dbgtap.lo
-am__objects_49 = src/target/armv7m.lo src/target/armv7m_trace.lo \
+am__objects_48 = src/target/armv4_5.lo src/target/armv4_5_mmu.lo \
+	src/target/armv4_5_cache.lo $(am__objects_47)
+am__objects_49 = src/target/arm11.lo src/target/arm11_dbgtap.lo
+am__objects_50 = src/target/armv7m.lo src/target/armv7m_trace.lo \
 	src/target/cortex_m.lo src/target/armv7a.lo \
 	src/target/cortex_a.lo src/target/ls1_sap.lo
-am__objects_50 = src/target/fa526.lo src/target/xscale.lo
-am__objects_51 = src/target/avr32_ap7k.lo src/target/avr32_jtag.lo \
+am__objects_51 = src/target/fa526.lo src/target/xscale.lo
+am__objects_52 = src/target/avr32_ap7k.lo src/target/avr32_jtag.lo \
 	src/target/avr32_mem.lo src/target/avr32_regs.lo
-am__objects_52 = src/target/mips32.lo src/target/mips_m4k.lo \
+am__objects_53 = src/target/mips32.lo src/target/mips_m4k.lo \
 	src/target/mips32_pracc.lo src/target/mips32_dmaacc.lo \
 	src/target/mips_ejtag.lo
-am__objects_53 = src/target/nds32.lo src/target/nds32_reg.lo \
+am__objects_54 = src/target/nds32.lo src/target/nds32_reg.lo \
 	src/target/nds32_cmd.lo src/target/nds32_disassembler.lo \
 	src/target/nds32_tlb.lo src/target/nds32_v2.lo \
 	src/target/nds32_v3_common.lo src/target/nds32_v3.lo \
 	src/target/nds32_v3m.lo src/target/nds32_aice.lo
-am__objects_54 = src/target/quark_x10xx.lo src/target/quark_d20xx.lo \
+am__objects_55 = src/target/quark_x10xx.lo src/target/quark_d20xx.lo \
 	src/target/lakemont.lo src/target/x86_32_common.lo
-am_src_target_libtarget_la_OBJECTS = $(am__objects_43) \
-	$(am__objects_45) $(am__objects_47) $(am__objects_48) \
-	$(am__objects_49) $(am__objects_50) $(am__objects_51) \
-	$(am__objects_52) $(am__objects_53) $(am__objects_54) \
+am_src_target_libtarget_la_OBJECTS = $(am__objects_44) \
+	$(am__objects_46) $(am__objects_48) $(am__objects_49) \
+	$(am__objects_50) $(am__objects_51) $(am__objects_52) \
+	$(am__objects_53) $(am__objects_54) $(am__objects_55) \
 	src/target/avrt.lo src/target/dsp563xx.lo \
 	src/target/dsp563xx_once.lo src/target/dsp5680xx.lo \
 	src/target/hla_target.lo
@@ -1154,7 +1156,7 @@ src_helper_libhelper_la_SOURCES = src/helper/binarybuffer.c \
 src_helper_libhelper_la_CFLAGS = $(AM_CFLAGS) $(am__append_10)
 JTAG_SRCS = $(am__append_11) $(am__append_12) $(am__append_15)
 src_jtag_libjtag_la_LIBADD = $(am__append_17) $(am__append_19) \
-	$(am__append_70)
+	$(am__append_71)
 @MINIDRIVER_DUMMY_TRUE@@MINIDRIVER_TRUE@JTAG_MINIDRIVER_DIR = src/jtag/minidummy
 @MINIDRIVER_TRUE@@ZY1000_TRUE@JTAG_MINIDRIVER_DIR = src/jtag/zy1000
 @MINIDRIVER_FALSE@MINIDRIVER_IMP_DIR = src/jtag/drivers
@@ -1214,7 +1216,7 @@ src_jtag_libjtag_la_LIBADD = $(am__append_17) $(am__append_19) \
 @MINIDRIVER_FALSE@	$(am__append_63) $(am__append_64) \
 @MINIDRIVER_FALSE@	$(am__append_65) $(am__append_66) \
 @MINIDRIVER_FALSE@	$(am__append_67) $(am__append_68) \
-@MINIDRIVER_FALSE@	$(am__append_69)
+@MINIDRIVER_FALSE@	$(am__append_69) $(am__append_70)
 @MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@src_jtag_drivers_usb_blaster_libocdusbblaster_la_SOURCES = $(USB_BLASTER_SRC)
 @MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@src_jtag_drivers_usb_blaster_libocdusbblaster_la_CPPFLAGS = -I$(top_srcdir)/src/jtag/drivers $(AM_CPPFLAGS) $(LIBUSB1_CFLAGS) $(LIBFTDI_CFLAGS)
 @MINIDRIVER_FALSE@@USB_BLASTER_DRIVER_TRUE@USB_BLASTER_SRC = src/jtag/drivers/usb_blaster/usb_blaster.c \
@@ -1437,7 +1439,7 @@ src_rtos_librtos_la_SOURCES = \
 	src/rtos/rtos_mqx_stackings.h \
 	src/rtos/rtos_ucos_iii_stackings.h
 
-src_rtos_librtos_la_CFLAGS = $(AM_CFLAGS) $(am__append_71)
+src_rtos_librtos_la_CFLAGS = $(AM_CFLAGS) $(am__append_72)
 src_server_libserver_la_SOURCES = \
 	src/server/server.c \
 	src/server/telnet_server.c \
@@ -1449,7 +1451,7 @@ src_server_libserver_la_SOURCES = \
 	src/server/tcl_server.c \
 	src/server/tcl_server.h
 
-src_server_libserver_la_CFLAGS = $(AM_CFLAGS) $(am__append_72)
+src_server_libserver_la_CFLAGS = $(AM_CFLAGS) $(am__append_73)
 src_flash_libflash_la_SOURCES = \
 	src/flash/common.c src/flash/common.h \
 	src/flash/mflash.c src/flash/mflash.h
@@ -2024,6 +2026,9 @@ src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-openjtag.lo:  \
 	src/jtag/drivers/$(am__dirstamp) \
 	src/jtag/drivers/$(DEPDIR)/$(am__dirstamp)
 src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-cmsis_dap_usb.lo:  \
+	src/jtag/drivers/$(am__dirstamp) \
+	src/jtag/drivers/$(DEPDIR)/$(am__dirstamp)
+src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo:  \
 	src/jtag/drivers/$(am__dirstamp) \
 	src/jtag/drivers/$(DEPDIR)/$(am__dirstamp)
 
@@ -2649,6 +2654,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-usb_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-usbprog.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-vsllink.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-xds110.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/usb_blaster/$(DEPDIR)/src_jtag_drivers_usb_blaster_libocdusbblaster_la-ublast2_access_libusb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/usb_blaster/$(DEPDIR)/src_jtag_drivers_usb_blaster_libocdusbblaster_la-ublast_access_ftdi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/jtag/drivers/usb_blaster/$(DEPDIR)/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.Plo@am__quote@
@@ -3200,6 +3206,13 @@ src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-cmsis_dap_usb.lo: src/jta
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/jtag/drivers/cmsis_dap_usb.c' object='src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-cmsis_dap_usb.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_jtag_drivers_libocdjtagdrivers_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-cmsis_dap_usb.lo `test -f 'src/jtag/drivers/cmsis_dap_usb.c' || echo '$(srcdir)/'`src/jtag/drivers/cmsis_dap_usb.c
+
+src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo: src/jtag/drivers/xds110.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_jtag_drivers_libocdjtagdrivers_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo -MD -MP -MF src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-xds110.Tpo -c -o src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo `test -f 'src/jtag/drivers/xds110.c' || echo '$(srcdir)/'`src/jtag/drivers/xds110.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-xds110.Tpo src/jtag/drivers/$(DEPDIR)/src_jtag_drivers_libocdjtagdrivers_la-xds110.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/jtag/drivers/xds110.c' object='src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_jtag_drivers_libocdjtagdrivers_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/jtag/drivers/src_jtag_drivers_libocdjtagdrivers_la-xds110.lo `test -f 'src/jtag/drivers/xds110.c' || echo '$(srcdir)/'`src/jtag/drivers/xds110.c
 
 src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.lo: src/jtag/drivers/usb_blaster/usb_blaster.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_jtag_drivers_usb_blaster_libocdusbblaster_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.lo -MD -MP -MF src/jtag/drivers/usb_blaster/$(DEPDIR)/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.Tpo -c -o src/jtag/drivers/usb_blaster/src_jtag_drivers_usb_blaster_libocdusbblaster_la-usb_blaster.lo `test -f 'src/jtag/drivers/usb_blaster/usb_blaster.c' || echo '$(srcdir)/'`src/jtag/drivers/usb_blaster/usb_blaster.c

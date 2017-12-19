@@ -728,6 +728,8 @@ OPENDOUS_FALSE
 OPENDOUS_TRUE
 OSBDM_FALSE
 OSBDM_TRUE
+XDS110_FALSE
+XDS110_TRUE
 VSLLINK_FALSE
 VSLLINK_TRUE
 USB_BLASTER_2_FALSE
@@ -903,6 +905,7 @@ enable_ti_icdi
 enable_ulink
 enable_usb_blaster_2
 enable_vsllink
+enable_xds110
 enable_osbdm
 enable_opendous
 enable_aice
@@ -1626,6 +1629,8 @@ Optional Features:
                           II Compatible (default is auto)
   --enable-vsllink        Enable building support for the Versaloon-Link JTAG
                           Programmer (default is auto)
+  --enable-xds110         Enable building support for the TI XDS110 Debug
+                          Probe (default is auto)
   --enable-osbdm          Enable building support for the OSBDM (JTAG only)
                           Programmer (default is auto)
   --enable-opendous       Enable building support for the eStick/opendous JTAG
@@ -13968,6 +13973,13 @@ else
   enable_vsllink=auto
 fi
 
+  # Check whether --enable-xds110 was given.
+if test "${enable_xds110+set}" = set; then :
+  enableval=$enable_xds110;
+else
+  enable_xds110=auto
+fi
+
   # Check whether --enable-osbdm was given.
 if test "${enable_osbdm+set}" = set; then :
   enableval=$enable_osbdm;
@@ -15477,6 +15489,41 @@ else
 fi
 
 
+	if test "x$use_libusb1" = "xyes"; then :
+
+		if test "x$enable_xds110" != "xno"; then :
+
+
+$as_echo "#define BUILD_XDS110 1" >>confdefs.h
+
+
+else
+
+
+$as_echo "#define BUILD_XDS110 0" >>confdefs.h
+
+
+fi
+
+else
+
+		if test "x$enable_xds110" = "xyes"; then :
+
+			as_fn_error $? "libusb-1.x is required for the TI XDS110 Debug Probe" "$LINENO" 5
+
+fi
+		enable_xds110=no
+
+fi
+	 if test "x$enable_xds110" != "xno"; then
+  XDS110_TRUE=
+  XDS110_FALSE='#'
+else
+  XDS110_TRUE='#'
+  XDS110_FALSE=
+fi
+
+
 
 
 
@@ -16472,6 +16519,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${VSLLINK_TRUE}" && test -z "${VSLLINK_FALSE}"; then
   as_fn_error $? "conditional \"VSLLINK\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${XDS110_TRUE}" && test -z "${XDS110_FALSE}"; then
+  as_fn_error $? "conditional \"XDS110\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${OSBDM_TRUE}" && test -z "${OSBDM_FALSE}"; then
@@ -19039,6 +19090,23 @@ s="Altera USB-Blaster II Compatible        "
 esac
 s="Versaloon-Link JTAG Programmer          "
 	case $enable_vsllink in #(
+  auto) :
+
+			echo "$s"yes '(auto)'
+		 ;; #(
+  yes) :
+
+			echo "$s"yes
+		 ;; #(
+  no) :
+
+			echo "$s"no
+	 ;; #(
+  *) :
+     ;;
+esac
+s="TI XDS110 Debug Probe                   "
+	case $enable_xds110 in #(
   auto) :
 
 			echo "$s"yes '(auto)'

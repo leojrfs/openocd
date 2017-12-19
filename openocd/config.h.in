@@ -96,6 +96,9 @@
 /* 0 if you do not want the Versaloon-Link JTAG Programmer. */
 #undef BUILD_VSLLINK
 
+/* 0 if you do not want the TI XDS110 Debug Probe. */
+#undef BUILD_XDS110
+
 /* 0 if you don't want ZY1000. */
 #undef BUILD_ZY1000
 

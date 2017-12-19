@@ -114,7 +114,8 @@ m4_define([USB1_ADAPTERS],
 	[[ti_icdi], [TI ICDI JTAG Programmer], [HLADAPTER_ICDI]],
 	[[ulink], [Keil ULINK JTAG Programmer], [ULINK]],
 	[[usb_blaster_2], [Altera USB-Blaster II Compatible], [USB_BLASTER_2]],
-	[[vsllink], [Versaloon-Link JTAG Programmer], [VSLLINK]]])
+	[[vsllink], [Versaloon-Link JTAG Programmer], [VSLLINK]],
+	[[xds110], [TI XDS110 Debug Probe], [XDS110]]])
 
 m4_define([USB_ADAPTERS],
 	[[[osbdm], [OSBDM (JTAG only) Programmer], [OSBDM]],
