@@ -5650,7 +5650,7 @@ Full erase, single and block writes are supported for both main and info regions
 There is additional not memory mapped flash called "Userflash", which
 also have division into regions: main and info.
 Purpose of userflash - to store system and user settings.
-Driver has special commands to perform operations with this memmory.
+Driver has special commands to perform operations with this memory.
 
 @example
 flash bank $_FLASHNAME niietcm4 0 0 0 0 $_TARGETNAME

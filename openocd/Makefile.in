@@ -246,8 +246,8 @@ am__objects_3 = src/flash/nor/aduc702x.lo src/flash/nor/aducm360.lo \
 	src/flash/nor/kinetis.lo src/flash/nor/kinetis_ke.lo \
 	src/flash/nor/lpc2000.lo src/flash/nor/lpc288x.lo \
 	src/flash/nor/lpc2900.lo src/flash/nor/lpcspifi.lo \
-	src/flash/nor/mdr.lo src/flash/nor/mrvlqspi.lo \
-	src/flash/nor/msp432.lo src/flash/nor/niietcm4.lo \
+	src/flash/nor/mdr.lo src/flash/nor/msp432.lo \
+	src/flash/nor/mrvlqspi.lo src/flash/nor/niietcm4.lo \
 	src/flash/nor/non_cfi.lo src/flash/nor/nrf51.lo \
 	src/flash/nor/numicro.lo src/flash/nor/ocl.lo \
 	src/flash/nor/pic32mx.lo src/flash/nor/psoc4.lo \
@@ -1497,8 +1497,8 @@ NOR_DRIVERS = \
 	src/flash/nor/lpc2900.c \
 	src/flash/nor/lpcspifi.c \
 	src/flash/nor/mdr.c \
-	src/flash/nor/mrvlqspi.c \
 	src/flash/nor/msp432.c \
+	src/flash/nor/mrvlqspi.c \
 	src/flash/nor/niietcm4.c \
 	src/flash/nor/non_cfi.c \
 	src/flash/nor/nrf51.c \
@@ -1529,10 +1529,10 @@ NORHEADERS = \
 	src/flash/nor/cfi.h \
 	src/flash/nor/driver.h \
 	src/flash/nor/imp.h \
-	src/flash/nor/msp432.h \
 	src/flash/nor/non_cfi.h \
 	src/flash/nor/ocl.h \
-	src/flash/nor/spi.h
+	src/flash/nor/spi.h \
+	src/flash/nor/msp432.h
 
 src_flash_nand_libocdflashnand_la_SOURCES = \
 	src/flash/nand/ecc.c \
@@ -1780,9 +1780,9 @@ src/flash/nor/lpcspifi.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
 src/flash/nor/mdr.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
-src/flash/nor/mrvlqspi.lo: src/flash/nor/$(am__dirstamp) \
-	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
 src/flash/nor/msp432.lo: src/flash/nor/$(am__dirstamp) \
+	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
+src/flash/nor/mrvlqspi.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)
 src/flash/nor/niietcm4.lo: src/flash/nor/$(am__dirstamp) \
 	src/flash/nor/$(DEPDIR)/$(am__dirstamp)

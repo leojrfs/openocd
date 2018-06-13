@@ -4892,7 +4892,7 @@ activate driver-specific commands.
      memory mapped flash called "Userflash", which also have division
      into regions: main and info.  Purpose of userflash - to store
      system and user settings.  Driver has special commands to perform
-     operations with this memmory.
+     operations with this memory.
 
           flash bank $_FLASHNAME niietcm4 0 0 0 0 $_TARGETNAME
 

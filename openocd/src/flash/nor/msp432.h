@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017 by Texas Instruments, Inc.                         *
+ *   Copyright (C) 2018 by Texas Instruments, Inc.                         *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,14 +25,14 @@
 
 /* MSP432 device types */
 #define MSP432_NO_TYPE    0 /* Device type not determined yet */
-#define MSP432P4XX_DEPR   1 /* Early MSP432P4xx offerings, now deprecated */
-#define MSP432P4XX        2 /* MSP432P4xx device, revision C or higher */
-#define MSP432P4111       3 /* MSP432P4111 device, revision A or higher */
-#define MSP432P4XX_GUESS  4 /* Assuming it's an MSP432P4xx device */
-#define MSP432P4111_GUESS 5 /* Assuming it's an MSP432P4111 device */
+#define MSP432P401X_DEPR  1 /* Early MSP432P401x offerings, now deprecated */
+#define MSP432P401X       2 /* MSP432P401x device, revision C or higher */
+#define MSP432P411X       3 /* MSP432P411x device, revision A or higher */
+#define MSP432P401X_GUESS 4 /* Assuming it's an MSP432P401x device */
+#define MSP432P411X_GUESS 5 /* Assuming it's an MSP432P411x device */
 #define MSP432E401Y       6 /* MSP432E401Y device */
 #define MSP432E411Y       7 /* MSP432E401Y device */
-#define MSP432E4XX_GUESS  8 /* Assuming it's an MSP432E4xx device */
+#define MSP432E4X_GUESS   8 /* Assuming it's an MSP432E4x device */
 
 /* MSP432P4 flash parameters */
 #define P4_FLASH_MAIN_BASE 0x00000000
@@ -93,35 +93,35 @@
 #define FLASH_ERASE_INFO 0x02
 
 /* Flash helper algorithm lock/unlock BSL options */
-#define FLASH_LOCK_BSL   0x00;
-#define FLASH_UNLOCK_BSL 0x0b;
+#define FLASH_LOCK_BSL   0x00
+#define FLASH_UNLOCK_BSL 0x0b
 
 /* Flash helper algorithm parameter block struct */
 struct msp432_algo_params {
-	volatile uint32_t flash_command;
-	volatile uint32_t return_code;
-	volatile uint32_t _reserved0;
-	volatile uint32_t address;
-	volatile uint32_t length;
-	volatile uint32_t buffer1_status;
-	volatile uint32_t buffer2_status;
-	volatile uint32_t erase_param;
-	volatile uint32_t unlock_bsl;
+	uint8_t flash_command[4];
+	uint8_t return_code[4];
+	uint8_t _reserved0[4];
+	uint8_t address[4];
+	uint8_t length[4];
+	uint8_t buffer1_status[4];
+	uint8_t buffer2_status[4];
+	uint8_t erase_param[4];
+	uint8_t unlock_bsl[4];
 };
 
-/* Flash helper algorithm for MSP432P4xx targets */
-const uint8_t msp432p4xx_algo[] = {
-#include "../../../contrib/loaders/flash/msp432/msp432p4xx_algo.inc"
+/* Flash helper algorithm for MSP432P401x targets */
+const uint8_t msp432p401x_algo[] = {
+#include "../../../contrib/loaders/flash/msp432/msp432p401x_algo.inc"
 };
 
-/* Flash helper algorithm for MSP432P4111 targets */
-const uint8_t msp432p4111_algo[] = {
-#include "../../../contrib/loaders/flash/msp432/msp432p4111_algo.inc"
+/* Flash helper algorithm for MSP432P411x targets */
+const uint8_t msp432p411x_algo[] = {
+#include "../../../contrib/loaders/flash/msp432/msp432p411x_algo.inc"
 };
 
-/* Flash helper algorithm for MSP432E4xx targets */
-const uint8_t msp432e4xx_algo[] = {
-#include "../../../contrib/loaders/flash/msp432/msp432e4xx_algo.inc"
+/* Flash helper algorithm for MSP432E4x targets */
+const uint8_t msp432e4x_algo[] = {
+#include "../../../contrib/loaders/flash/msp432/msp432e4x_algo.inc"
 };
 
 #endif /* OPENOCD_FLASH_NOR_MSP432_H */

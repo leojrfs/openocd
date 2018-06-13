@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2017 by Texas Instruments, Inc.                         *
+ *   Copyright (C) 2018 by Texas Instruments, Inc.                         *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -40,7 +40,7 @@
 #define FLASH_TIMEOUT 8000
 
 #define SUPPORT_MESSAGE \
-	"Your pre-production MSP432P4xx silicon is not fully supported\n" \
+	"Your pre-production MSP432P401x silicon is not fully supported\n" \
 	"You can find more information at www.ti.com/product/MSP432P401R"
 
 struct msp432_bank {
@@ -74,11 +74,11 @@ static int msp432_device_type(uint32_t family_type, uint32_t device_id,
 				device_type = MSP432E411Y;
 			} else {
 				/* Reasonable guess that this is a new variant */
-				device_type = MSP432E4XX_GUESS;
+				device_type = MSP432E4X_GUESS;
 			}
 		} else {
 			/* Wild guess that this is an MSP432E4 */
-			device_type = MSP432E4XX_GUESS;
+			device_type = MSP432E4X_GUESS;
 		}
 	} else {
 		/* MSP432P4 device family */
@@ -91,16 +91,16 @@ static int msp432_device_type(uint32_t family_type, uint32_t device_id,
 			case 0xA003:
 			case 0xA004:
 			case 0xA005:
-				/* Device is definitely MSP432P4xx, check hardware revision */
+				/* Device is definitely MSP432P401x, check hardware revision */
 				if (hardware_rev == 0x41 || hardware_rev == 0x42) {
 					/* Rev A or B of the silicon has been deprecated */
-					device_type = MSP432P4XX_DEPR;
+					device_type = MSP432P401X_DEPR;
 				} else if (hardware_rev >= 0x43 && hardware_rev <= 0x49) {
-					/* Current and future revisions of the MSP432P4xx device */
-					device_type = MSP432P4XX;
+					/* Current and future revisions of the MSP432P401x device */
+					device_type = MSP432P401X;
 				} else {
 					/* Unknown or unanticipated hardware revision */
-					device_type = MSP432P4XX_GUESS;
+					device_type = MSP432P401X_GUESS;
 				}
 				break;
 			case 0xA010:
@@ -113,26 +113,26 @@ static int msp432_device_type(uint32_t family_type, uint32_t device_id,
 			case 0xA026:
 			case 0xA029:
 			case 0xA02F:
-				/* Device is definitely MSP432P4111, check hardware revision */
+				/* Device is definitely MSP432P411x, check hardware revision */
 				if (hardware_rev >= 0x41 && hardware_rev <= 0x49) {
-					/* Current and future revisions of the MSP432P4111 device */
-					device_type = MSP432P4111;
+					/* Current and future revisions of the MSP432P411x device */
+					device_type = MSP432P411X;
 				} else {
 					/* Unknown or unanticipated hardware revision */
-					device_type = MSP432P4111_GUESS;
+					device_type = MSP432P411X_GUESS;
 				}
 				break;
 			case 0xFFFF:
 				/* Device is very early silicon that has been deprecated */
-				device_type = MSP432P4XX_DEPR;
+				device_type = MSP432P401X_DEPR;
 				break;
 			default:
 				if (device_id < 0xA010) {
-					/* Wild guess that this is an MSP432P4xx */
-					device_type = MSP432P4XX_GUESS;
+					/* Wild guess that this is an MSP432P401x */
+					device_type = MSP432P401X_GUESS;
 				} else {
 					/* Reasonable guess that this is a new variant */
-					device_type = MSP432P4111_GUESS;
+					device_type = MSP432P411X_GUESS;
 				}
 				break;
 		}
@@ -165,15 +165,15 @@ static const char *msp432_return_text(uint32_t return_code)
 
 static void msp432_init_params(struct msp432_algo_params *algo_params)
 {
-	algo_params->flash_command = FLASH_NO_COMMAND;
-	algo_params->return_code = 0;
-	algo_params->_reserved0 = 0;
-	algo_params->address = 0;
-	algo_params->length = 0;
-	algo_params->buffer1_status = BUFFER_INACTIVE;
-	algo_params->buffer2_status = BUFFER_INACTIVE;
-	algo_params->erase_param = FLASH_ERASE_MAIN;
-	algo_params->unlock_bsl = FLASH_LOCK_BSL;
+	buf_set_u32(algo_params->flash_command, 0, 32, FLASH_NO_COMMAND);
+	buf_set_u32(algo_params->return_code, 0, 32, 0);
+	buf_set_u32(algo_params->_reserved0, 0, 32, 0);
+	buf_set_u32(algo_params->address, 0, 32, 0);
+	buf_set_u32(algo_params->length, 0, 32, 0);
+	buf_set_u32(algo_params->buffer1_status, 0, 32, BUFFER_INACTIVE);
+	buf_set_u32(algo_params->buffer2_status, 0, 32, BUFFER_INACTIVE);
+	buf_set_u32(algo_params->erase_param, 0, 32, FLASH_ERASE_MAIN);
+	buf_set_u32(algo_params->unlock_bsl, 0, 32, FLASH_LOCK_BSL);
 }
 
 static int msp432_exec_cmd(struct target *target, struct msp432_algo_params
@@ -182,10 +182,10 @@ static int msp432_exec_cmd(struct target *target, struct msp432_algo_params
 	int retval;
 
 	/* Make sure the given params do not include the command */
-	algo_params->flash_command = FLASH_NO_COMMAND;
-	algo_params->return_code = 0;
-	algo_params->buffer1_status = BUFFER_INACTIVE;
-	algo_params->buffer2_status = BUFFER_INACTIVE;
+	buf_set_u32(algo_params->flash_command, 0, 32, FLASH_NO_COMMAND);
+	buf_set_u32(algo_params->return_code, 0, 32, 0);
+	buf_set_u32(algo_params->buffer1_status, 0, 32, BUFFER_INACTIVE);
+	buf_set_u32(algo_params->buffer2_status, 0, 32, BUFFER_INACTIVE);
 
 	/* Write out parameters to target memory */
 	retval = target_write_buffer(target, ALGO_PARAMS_BASE_ADDR,
@@ -209,7 +209,7 @@ static int msp432_wait_return_code(struct target *target)
 	int retval = ERROR_OK;
 
 	start_ms = timeval_ms();
-	while (0 == return_code || FLASH_BUSY == return_code) {
+	while ((0 == return_code) || (FLASH_BUSY == return_code)) {
 		retval = target_read_buffer(target, ALGO_RETURN_CODE_ADDR,
 					sizeof(return_code), (uint8_t *)&return_code);
 		if (ERROR_OK != retval)
@@ -293,42 +293,42 @@ static int msp432_init(struct flash_bank *bank)
 
 	/* Choose appropriate flash helper algorithm */
 	switch (msp432_bank->device_type) {
-		case MSP432P4XX:
-		case MSP432P4XX_DEPR:
-		case MSP432P4XX_GUESS:
+		case MSP432P401X:
+		case MSP432P401X_DEPR:
+		case MSP432P401X_GUESS:
 		default:
-			loader_code = msp432p4xx_algo;
-			loader_size = sizeof(msp432p4xx_algo);
+			loader_code = msp432p401x_algo;
+			loader_size = sizeof(msp432p401x_algo);
 			algo_entry_addr = P4_ALGO_ENTRY_ADDR;
 			break;
-		case MSP432P4111:
-		case MSP432P4111_GUESS:
-			loader_code = msp432p4111_algo;
-			loader_size = sizeof(msp432p4111_algo);
+		case MSP432P411X:
+		case MSP432P411X_GUESS:
+			loader_code = msp432p411x_algo;
+			loader_size = sizeof(msp432p411x_algo);
 			algo_entry_addr = P4_ALGO_ENTRY_ADDR;
 			break;
 		case MSP432E401Y:
 		case MSP432E411Y:
-		case MSP432E4XX_GUESS:
-			loader_code = msp432e4xx_algo;
-			loader_size = sizeof(msp432p4111_algo);
+		case MSP432E4X_GUESS:
+			loader_code = msp432e4x_algo;
+			loader_size = sizeof(msp432e4x_algo);
 			algo_entry_addr = E4_ALGO_ENTRY_ADDR;
 			break;
 	}
 
 	/* Issue warnings if this is a device we may not be able to flash */
-	if (MSP432P4XX_GUESS == msp432_bank->device_type ||
-		MSP432P4111_GUESS == msp432_bank->device_type) {
+	if (MSP432P401X_GUESS == msp432_bank->device_type ||
+		MSP432P411X_GUESS == msp432_bank->device_type) {
 		/* Explicit device type check failed. Report this. */
 		LOG_WARNING(
 			"msp432: Unrecognized MSP432P4 Device ID and Hardware "
 			"Rev (%04X, %02X)", msp432_bank->device_id,
 			msp432_bank->hardware_rev);
-	} else if (MSP432P4XX_DEPR == msp432_bank->device_type) {
+	} else if (MSP432P401X_DEPR == msp432_bank->device_type) {
 		LOG_WARNING(
-			"msp432: MSP432P4xx pre-production device (deprecated "
+			"msp432: MSP432P401x pre-production device (deprecated "
 			"silicon)\n" SUPPORT_MESSAGE);
-	} else if (MSP432E4XX_GUESS == msp432_bank->device_type) {
+	} else if (MSP432E4X_GUESS == msp432_bank->device_type) {
 		/* Explicit device type check failed. Report this. */
 		LOG_WARNING(
 			"msp432: Unrecognized MSP432E4 DID0 and DID1 values "
@@ -337,7 +337,7 @@ static int msp432_init(struct flash_bank *bank)
 	}
 
 	/* Check for working area to use for flash helper algorithm */
-	if (0 != msp432_bank->working_area)
+	if (NULL != msp432_bank->working_area)
 		target_free_working_area(target, msp432_bank->working_area);
 	retval = target_alloc_working_area(target, ALGO_WORKING_SIZE,
 				&msp432_bank->working_area);
@@ -392,12 +392,6 @@ static int msp432_init(struct flash_bank *bank)
 
 	retval = msp432_wait_return_code(target);
 
-	/* Mark erased status of sectors as "unknown" */
-	if (0 != bank->sectors) {
-		for (int i = 0; i < bank->num_sectors; i++)
-			bank->sectors[i].is_erased = -1;
-	}
-
 	return retval;
 }
 
@@ -417,17 +411,17 @@ static int msp432_quit(struct flash_bank *bank)
 	if (ERROR_OK != retval)
 		return retval;
 
-	retval = msp432_wait_return_code(target);
+	(void)msp432_wait_return_code(target);
 
 	/* Regardless of the return code, attempt to halt the target */
 	(void)target_halt(target);
 
 	/* Now confirm target halted and clean up from flash helper algorithm */
-	retval = target_wait_algorithm(target, 0, 0, 0, 0, 0, FLASH_TIMEOUT,
+	retval = target_wait_algorithm(target, 0, NULL, 0, NULL, 0, FLASH_TIMEOUT,
 				&msp432_bank->armv7m_info);
 
 	target_free_working_area(target, msp432_bank->working_area);
-	msp432_bank->working_area = 0;
+	msp432_bank->working_area = NULL;
 
 	return retval;
 }
@@ -452,29 +446,28 @@ static int msp432_mass_erase(struct flash_bank *bank, bool all)
 	/* Initialize algorithm parameters to default values */
 	msp432_init_params(&algo_params);
 	if (all) {
-		algo_params.erase_param = FLASH_ERASE_MAIN | FLASH_ERASE_INFO;
+		buf_set_u32(algo_params.erase_param, 0, 32,
+			FLASH_ERASE_MAIN | FLASH_ERASE_INFO);
 		if (msp432_bank->unlock_bsl)
-			algo_params.unlock_bsl = FLASH_UNLOCK_BSL;
+			buf_set_u32(algo_params.unlock_bsl, 0, 32, FLASH_UNLOCK_BSL);
 	}
 
 	/* Issue the mass erase command to the flash helper algorithm */
 	retval = msp432_exec_cmd(target, &algo_params, FLASH_MASS_ERASE);
-	if (ERROR_OK != retval)
+	if (ERROR_OK != retval) {
+		(void)msp432_quit(bank);
 		return retval;
+	}
 
 	retval = msp432_wait_return_code(target);
-	if (ERROR_OK != retval)
+	if (ERROR_OK != retval) {
+		(void)msp432_quit(bank);
 		return retval;
+	}
 
 	retval = msp432_quit(bank);
 	if (ERROR_OK != retval)
 		return retval;
-
-	/* Mark all sectors erased */
-	if (0 != bank->sectors) {
-		for (int i = 0; i < bank->num_sectors; i++)
-			bank->sectors[i].is_erased = 1;
-	}
 
 	return retval;
 }
@@ -503,14 +496,14 @@ COMMAND_HANDLER(msp432_mass_erase_command)
 	retval = get_flash_bank_by_num(0, &bank);
 	if (ERROR_OK != retval)
 		return retval;
-	
+
 	msp432_bank = bank->driver_priv;
-	
+
 	if (MSP432E4 == msp432_bank->family_type) {
 		/* MSP432E4 does not have main vs info regions, ignore "all" */
 		all = false;
 	}
-	
+
 	retval = msp432_mass_erase(bank, all);
 	if (ERROR_OK != retval)
 		return retval;
@@ -522,7 +515,7 @@ COMMAND_HANDLER(msp432_mass_erase_command)
 		LOG_INFO("msp432: Mass erase of %s is complete",
 			all ? "main + info flash" : "main flash");
 	}
-	
+
 	return ERROR_OK;
 }
 
@@ -569,7 +562,7 @@ FLASH_BANK_COMMAND_HANDLER(msp432_flash_bank_command)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
 	msp432_bank = malloc(sizeof(struct msp432_bank));
-	if (0 == msp432_bank)
+	if (NULL == msp432_bank)
 		return ERROR_FAIL;
 
 	/* Initialize private flash information */
@@ -581,11 +574,11 @@ FLASH_BANK_COMMAND_HANDLER(msp432_flash_bank_command)
 	msp432_bank->probed[0] = false;
 	msp432_bank->probed[1] = false;
 	msp432_bank->unlock_bsl = false;
-	msp432_bank->working_area = 0;
+	msp432_bank->working_area = NULL;
 
 	/* Finish initialization of bank 0 (main flash) */
 	bank->driver_priv = msp432_bank;
-	bank->next = 0;
+	bank->next = NULL;
 
 	return ERROR_OK;
 }
@@ -619,10 +612,10 @@ static int msp432_erase(struct flash_bank *bank, int first, int last)
 
 	/* Adjust params if this is the info bank */
 	if (1 == bank->bank_number) {
-		algo_params.erase_param = FLASH_ERASE_INFO;
+		buf_set_u32(algo_params.erase_param, 0, 32, FLASH_ERASE_INFO);
 		/* And flag if BSL is unlocked */
 		if (msp432_bank->unlock_bsl)
-			algo_params.unlock_bsl = FLASH_UNLOCK_BSL;
+			buf_set_u32(algo_params.unlock_bsl, 0, 32, FLASH_UNLOCK_BSL);
 	}
 
 	/* Erase requested sectors one by one */
@@ -638,20 +631,21 @@ static int msp432_erase(struct flash_bank *bank, int first, int last)
 			continue;
 
 		/* Convert sector number to starting address of sector */
-		algo_params.address = bank->base + (i * msp432_bank->sector_length);
+		buf_set_u32(algo_params.address, 0, 32, bank->base +
+			(i * msp432_bank->sector_length));
 
 		/* Issue the sector erase command to the flash helper algorithm */
 		retval = msp432_exec_cmd(target, &algo_params, FLASH_SECTOR_ERASE);
-		if (ERROR_OK != retval)
+		if (ERROR_OK != retval) {
+			(void)msp432_quit(bank);
 			return retval;
+		}
 
 		retval = msp432_wait_return_code(target);
-		if (ERROR_OK != retval)
+		if (ERROR_OK != retval) {
+			(void)msp432_quit(bank);
 			return retval;
-
-		/* Mark the sector as erased */
-		if (0 != bank->sectors)
-			bank->sectors[i].is_erased = 1;
+		}
 	}
 
 	retval = msp432_quit(bank);
@@ -677,8 +671,6 @@ static int msp432_write(struct flash_bank *bank, const uint8_t *buffer,
 	uint32_t data_ready = BUFFER_DATA_READY;
 	long long start_ms;
 	long long elapsed_ms;
-	uint32_t end_address = offset + count - 1;
-	uint32_t sector;
 
 	int retval;
 
@@ -732,20 +724,22 @@ static int msp432_write(struct flash_bank *bank, const uint8_t *buffer,
 	msp432_init_params(&algo_params);
 
 	/* Set up parameters for requested flash write operation */
-	algo_params.address = bank->base + offset;
-	algo_params.length = count;
+	buf_set_u32(algo_params.address, 0, 32, bank->base + offset);
+	buf_set_u32(algo_params.length, 0, 32, count);
 
 	/* Check if this is the info bank */
 	if (1 == bank->bank_number) {
 		/* And flag if BSL is unlocked */
 		if (msp432_bank->unlock_bsl)
-			algo_params.unlock_bsl = FLASH_UNLOCK_BSL;
+			buf_set_u32(algo_params.unlock_bsl, 0, 32, FLASH_UNLOCK_BSL);
 	}
 
 	/* Set up flash helper algorithm to continuous flash mode */
 	retval = msp432_exec_cmd(target, &algo_params, FLASH_CONTINUOUS);
-	if (ERROR_OK != retval)
+	if (ERROR_OK != retval) {
+		(void)msp432_quit(bank);
 		return retval;
+	}
 
 	/* Write requested data, one buffer at a time */
 	start_ms = timeval_ms();
@@ -760,18 +754,23 @@ static int msp432_write(struct flash_bank *bank, const uint8_t *buffer,
 		retval = target_write_buffer(target, ALGO_BUFFER1_ADDR, size, buffer);
 		if (ERROR_OK != retval) {
 			LOG_ERROR("Unable to write data to target memory");
+			(void)msp432_quit(bank);
 			return ERROR_FLASH_OPERATION_FAILED;
 		}
 
 		/* Signal the flash helper algorithm that data is ready to flash */
 		retval = target_write_buffer(target, ALGO_BUFFER1_STATUS_ADDR,
 					sizeof(data_ready), (uint8_t *)&data_ready);
-		if (ERROR_OK != retval)
+		if (ERROR_OK != retval) {
+			(void)msp432_quit(bank);
 			return ERROR_FLASH_OPERATION_FAILED;
+		}
 
 		retval = msp432_wait_inactive(target, 1);
-		if (ERROR_OK != retval)
+		if (ERROR_OK != retval) {
+			(void)msp432_quit(bank);
 			return retval;
+		}
 
 		count -= size;
 		buffer += size;
@@ -783,19 +782,14 @@ static int msp432_write(struct flash_bank *bank, const uint8_t *buffer,
 
 	/* Confirm that the flash helper algorithm is finished */
 	retval = msp432_wait_return_code(target);
-	if (ERROR_OK != retval)
+	if (ERROR_OK != retval) {
+		(void)msp432_quit(bank);
 		return retval;
+	}
 
 	retval = msp432_quit(bank);
 	if (ERROR_OK != retval)
 		return retval;
-
-	/* Mark flashed sectors as "not erased" */
-	while (offset <= end_address) {
-		sector = offset / msp432_bank->sector_length;
-		bank->sectors[sector].is_erased = 0;
-		offset += msp432_bank->sector_length;
-	}
 
 	return retval;
 }
@@ -804,6 +798,8 @@ static int msp432_probe(struct flash_bank *bank)
 {
 	struct target *target = bank->target;
 	struct msp432_bank *msp432_bank = bank->driver_priv;
+
+	char *name;
 
 	uint32_t device_id;
 	uint32_t hardware_rev;
@@ -817,11 +813,6 @@ static int msp432_probe(struct flash_bank *bank)
 	int retval;
 
 	bank_id = bank->bank_number;
-
-	if (TARGET_HALTED != target->state) {
-		LOG_ERROR("Target not halted");
-		return ERROR_TARGET_NOT_HALTED;
-	}
 
 	/* Read the flash size register to determine this is a P4 or not */
 	/* MSP432P4s will return the size of flash.  MSP432E4s will return zero */
@@ -870,14 +861,21 @@ static int msp432_probe(struct flash_bank *bank)
 		/* If we've been given bank 1, then this was already done */
 		if (0 == bank_id) {
 			/* And only allocate it if it doesn't exist yet */
-			if (0 == bank->next) {
+			if (NULL == bank->next) {
 				struct flash_bank *info_bank;
 				info_bank = malloc(sizeof(struct flash_bank));
-				if (0 == info_bank)
+				if (NULL == info_bank)
 					return ERROR_FAIL;
 
+				name = malloc(strlen(bank->name)+1);
+				if (NULL == name) {
+					free(info_bank);
+					return ERROR_FAIL;
+				}
+				strcpy(name, bank->name);
+
 				/* Initialize bank 1 (info region) */
-				info_bank->name = bank->name;
+				info_bank->name = name;
 				info_bank->target = bank->target;
 				info_bank->driver = bank->driver;
 				info_bank->driver_priv = bank->driver_priv;
@@ -886,10 +884,13 @@ static int msp432_probe(struct flash_bank *bank)
 				info_bank->size = 0;
 				info_bank->chip_width = 0;
 				info_bank->bus_width = 0;
+				info_bank->erased_value = 0xff;
 				info_bank->default_padded_value = 0xff;
 				info_bank->num_sectors = 0;
-				info_bank->sectors = 0;
-				info_bank->next = 0;
+				info_bank->sectors = NULL;
+				info_bank->num_prot_blocks = 0;
+				info_bank->prot_blocks = NULL;
+				info_bank->next = NULL;
 
 				/* Enable the new bank */
 				bank->next = info_bank;
@@ -908,14 +909,14 @@ static int msp432_probe(struct flash_bank *bank)
 			sector_length = P4_SECTOR_LENGTH;
 			num_sectors = size / sector_length;
 		} else if (1 == bank_id) {
-			if (msp432_bank->device_type == MSP432P4111 ||
-				msp432_bank->device_type == MSP432P4111_GUESS) {
-				/* MSP432P4111 has an info size register, use that for size */
+			if (msp432_bank->device_type == MSP432P411X ||
+				msp432_bank->device_type == MSP432P411X_GUESS) {
+				/* MSP432P411x has an info size register, use that for size */
 				retval = target_read_u32(target, P4_FLASH_INFO_SIZE_REG, &size);
 				if (ERROR_OK != retval)
 					return retval;
 			} else {
-				/* All other MSP432P4xx devices have fixed info region size */
+				/* All other MSP432P401x devices have fixed info region size */
 				size = 0x4000; /* 16 KB info region */
 			}
 			base = P4_FLASH_INFO_BASE;
@@ -933,13 +934,13 @@ static int msp432_probe(struct flash_bank *bank)
 		num_sectors = size / sector_length;
 	}
 
-	if (0 != bank->sectors) {
+	if (NULL != bank->sectors) {
 		free(bank->sectors);
-		bank->sectors = 0;
+		bank->sectors = NULL;
 	}
 
 	bank->sectors = malloc(sizeof(struct flash_sector) * num_sectors);
-	if (0 == bank->sectors)
+	if (NULL == bank->sectors)
 		return ERROR_FAIL;
 
 	bank->base = base;
@@ -990,42 +991,42 @@ static int msp432_info(struct flash_bank *bank, char *buf, int buf_size)
 	int printed = 0;
 
 	switch (msp432_bank->device_type) {
-		case MSP432P4XX_DEPR:
+		case MSP432P401X_DEPR:
 			if (0xFFFF == msp432_bank->device_id) {
 				/* Very early pre-production silicon currently deprecated */
 				printed = snprintf(buf, buf_size,
-					"MSP432P4xx pre-production device (deprecated silicon)\n"
+					"MSP432P401x pre-production device (deprecated silicon)\n"
 					SUPPORT_MESSAGE);
 			} else {
 				/* Revision A or B silicon, also deprecated */
 				printed = snprintf(buf, buf_size,
-					"MSP432P4xx Device Rev %c (deprecated silicon)\n"
+					"MSP432P401x Device Rev %c (deprecated silicon)\n"
 					SUPPORT_MESSAGE, (char)msp432_bank->hardware_rev);
 			}
 			break;
-		case MSP432P4XX:
+		case MSP432P401X:
 			printed = snprintf(buf, buf_size,
-				"MSP432P4xx Device Rev %c\n",
+				"MSP432P401x Device Rev %c\n",
 				(char)msp432_bank->hardware_rev);
 			break;
-		case MSP432P4111:
+		case MSP432P411X:
 			printed = snprintf(buf, buf_size,
-				"MSP432P4111 Device Rev %c\n",
+				"MSP432P411x Device Rev %c\n",
 				(char)msp432_bank->hardware_rev);
 			break;
 		case MSP432E401Y:
-			printed = snprintf(buf, buf_size, "MSP432E401Y Device \n");
+			printed = snprintf(buf, buf_size, "MSP432E401Y Device\n");
 			break;
 		case MSP432E411Y:
-			printed = snprintf(buf, buf_size, "MSP432E411Y Device \n");
+			printed = snprintf(buf, buf_size, "MSP432E411Y Device\n");
 			break;
-		case MSP432E4XX_GUESS:
+		case MSP432E4X_GUESS:
 			printed = snprintf(buf, buf_size,
 				"Unrecognized MSP432E4 DID0 and DID1 IDs (%08X, %08X)",
 				msp432_bank->device_id, msp432_bank->hardware_rev);
 			break;
-		case MSP432P4XX_GUESS:
-		case MSP432P4111_GUESS:
+		case MSP432P401X_GUESS:
+		case MSP432P411X_GUESS:
 		default:
 			printed = snprintf(buf, buf_size,
 				"Unrecognized MSP432P4 Device ID and Hardware Rev (%04X, %02X)",
@@ -1033,7 +1034,6 @@ static int msp432_info(struct flash_bank *bank, char *buf, int buf_size)
 			break;
 	}
 
-	buf += printed;
 	buf_size -= printed;
 
 	if (0 > buf_size)

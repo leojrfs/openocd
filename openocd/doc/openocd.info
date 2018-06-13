@@ -24,7 +24,7 @@ END-INFO-DIR-ENTRY
 
 Indirect:
 openocd.info-1: 993
-openocd.info-2: 321137
+openocd.info-2: 321136
 
 Tag Table:
 (Indirect)
@@ -76,39 +76,39 @@ Ref: program185576
 Ref: flashdriverlist185834
 Ref: at91samd194780
 Ref: at91sam3197315
-Ref: nandconfiguration240290
-Ref: nanddriverlist250677
-Ref: Flash Commands-Footnote-1257077
-Ref: Flash Commands-Footnote-2257243
-Node: Flash Programming257408
-Node: PLD/FPGA Commands258904
-Node: General Commands261068
-Ref: debuglevel263122
-Ref: targetstatehandling264229
-Ref: resetcommand267985
-Ref: memoryaccess270255
-Ref: imageaccess271882
-Node: Architecture and Core Commands276651
-Ref: armhardwaretracing277121
-Ref: traceportdrivers285039
-Ref: arm9vectorcatch293317
-Ref: xscalevectorcatch301720
-Ref: softwaredebugmessagesandtracing316677
-Node: JTAG Commands321137
-Node: Boundary Scan Commands329587
-Node: Utility Commands332049
-Node: TFTP333883
-Node: GDB and OpenOCD334752
-Ref: programmingusinggdb339647
-Ref: usingopenocdsmpwithgdb341092
-Ref: gdbrtossupport342560
-Node: Tcl Scripting API344255
-Node: FAQ349057
-Ref: faqrtck349167
-Ref: faqtaporder361049
-Node: Tcl Crash Course362812
-Node: License374810
-Node: OpenOCD Concept Index397221
-Node: Command and Driver Index418031
+Ref: nandconfiguration240289
+Ref: nanddriverlist250676
+Ref: Flash Commands-Footnote-1257076
+Ref: Flash Commands-Footnote-2257242
+Node: Flash Programming257407
+Node: PLD/FPGA Commands258903
+Node: General Commands261067
+Ref: debuglevel263121
+Ref: targetstatehandling264228
+Ref: resetcommand267984
+Ref: memoryaccess270254
+Ref: imageaccess271881
+Node: Architecture and Core Commands276650
+Ref: armhardwaretracing277120
+Ref: traceportdrivers285038
+Ref: arm9vectorcatch293316
+Ref: xscalevectorcatch301719
+Ref: softwaredebugmessagesandtracing316676
+Node: JTAG Commands321136
+Node: Boundary Scan Commands329586
+Node: Utility Commands332048
+Node: TFTP333882
+Node: GDB and OpenOCD334751
+Ref: programmingusinggdb339646
+Ref: usingopenocdsmpwithgdb341091
+Ref: gdbrtossupport342559
+Node: Tcl Scripting API344254
+Node: FAQ349056
+Ref: faqrtck349166
+Ref: faqtaporder361048
+Node: Tcl Crash Course362811
+Node: License374809
+Node: OpenOCD Concept Index397220
+Node: Command and Driver Index418030
 
 End Tag Table
