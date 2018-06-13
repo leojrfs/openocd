@@ -29,7 +29,6 @@
 
 struct cc3220sf_bank {
 	bool probed;
-	struct working_area *working_area;
 	struct armv7m_algorithm armv7m_info;
 };
 
@@ -49,16 +48,12 @@ static int cc3220sf_mass_erase(struct flash_bank *bank)
 	}
 
 	/* Set starting address to erase to zero */
-	value = 0;
-	retval = target_write_buffer(target, FMA_REGISTER_ADDR,
-				sizeof(value), (uint8_t *)&value);
+	retval = target_write_u32(target, FMA_REGISTER_ADDR, 0);
 	if (ERROR_OK != retval)
 		return retval;
 
 	/* Write the MERASE bit of the FMC register */
-	value = FMC_DEFAULT_VALUE | FMC_MERASE_BIT;
-	retval = target_write_buffer(target, FMC_REGISTER_ADDR,
-				sizeof(value), (uint8_t *)&value);
+	retval = target_write_u32(target, FMC_REGISTER_ADDR, FMC_MERASE_VALUE);
 	if (ERROR_OK != retval)
 		return retval;
 
@@ -66,8 +61,7 @@ static int cc3220sf_mass_erase(struct flash_bank *bank)
 	done = false;
 	start_ms = timeval_ms();
 	while (!done) {
-		retval = target_read_buffer(target, FMC_REGISTER_ADDR,
-					sizeof(value), (uint8_t *)&value);
+		retval = target_read_u32(target, FMC_REGISTER_ADDR, &value);
 		if (ERROR_OK != retval)
 			return retval;
 
@@ -88,12 +82,6 @@ static int cc3220sf_mass_erase(struct flash_bank *bank)
 		return ERROR_FAIL;
 	}
 
-	/* Mark all sectors erased */
-	if (0 != bank->sectors) {
-		for (int i = 0; i < bank->num_sectors; i++)
-			bank->sectors[i].is_erased = 1;
-	}
-
 	return retval;
 }
 
@@ -105,16 +93,15 @@ FLASH_BANK_COMMAND_HANDLER(cc3220sf_flash_bank_command)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
 	cc3220sf_bank = malloc(sizeof(struct cc3220sf_bank));
-	if (0 == cc3220sf_bank)
+	if (NULL == cc3220sf_bank)
 		return ERROR_FAIL;
 
 	/* Initialize private flash information */
 	cc3220sf_bank->probed = false;
-	cc3220sf_bank->working_area = 0;
 
 	/* Finish initialization of flash bank */
 	bank->driver_priv = cc3220sf_bank;
-	bank->next = 0;
+	bank->next = NULL;
 
 	return ERROR_OK;
 }
@@ -148,15 +135,12 @@ static int cc3220sf_erase(struct flash_bank *bank, int first, int last)
 		address = FLASH_BASE_ADDR + i * FLASH_SECTOR_SIZE;
 
 		/* Set starting address to erase */
-		retval = target_write_buffer(target, FMA_REGISTER_ADDR,
-					sizeof(address), (uint8_t *)&address);
+		retval = target_write_u32(target, FMA_REGISTER_ADDR, address);
 		if (ERROR_OK != retval)
 			return retval;
 
 		/* Write the ERASE bit of the FMC register */
-		value = FMC_DEFAULT_VALUE | FMC_ERASE_BIT;
-		retval = target_write_buffer(target, FMC_REGISTER_ADDR,
-					sizeof(value), (uint8_t *)&value);
+		retval = target_write_u32(target, FMC_REGISTER_ADDR, FMC_ERASE_VALUE);
 		if (ERROR_OK != retval)
 			return retval;
 
@@ -164,8 +148,7 @@ static int cc3220sf_erase(struct flash_bank *bank, int first, int last)
 		done = false;
 		start_ms = timeval_ms();
 		while (!done) {
-			retval = target_read_buffer(target, FMC_REGISTER_ADDR,
-						sizeof(value), (uint8_t *)&value);
+			retval = target_read_u32(target, FMC_REGISTER_ADDR, &value);
 			if (ERROR_OK != retval)
 				return retval;
 
@@ -185,10 +168,6 @@ static int cc3220sf_erase(struct flash_bank *bank, int first, int last)
 			/* Sector erase timed out waiting for confirmation */
 			return ERROR_FAIL;
 		}
-
-		/* Mark the sector as erased */
-		if (0 != bank->sectors)
-			bank->sectors[i].is_erased = 1;
 	}
 
 	return retval;
@@ -205,12 +184,15 @@ static int cc3220sf_write(struct flash_bank *bank, const uint8_t *buffer,
 {
 	struct target *target = bank->target;
 	struct cc3220sf_bank *cc3220sf_bank = bank->driver_priv;
+	struct working_area *algo_working_area;
+	struct working_area *buffer_working_area;
 	struct reg_param reg_params[3];
+	uint32_t algo_base_address;
+	uint32_t algo_buffer_address;
+	uint32_t algo_buffer_size;
 	uint32_t address;
 	uint32_t remaining;
 	uint32_t words;
-	uint32_t end_address = offset + count - 1;
-	uint32_t sector;
 	uint32_t result;
 
 	int retval = ERROR_OK;
@@ -220,23 +202,37 @@ static int cc3220sf_write(struct flash_bank *bank, const uint8_t *buffer,
 		return ERROR_TARGET_NOT_HALTED;
 	}
 
-	/* Check for working area to use for flash helper algorithm */
-	if (0 != cc3220sf_bank->working_area)
-		target_free_working_area(target, cc3220sf_bank->working_area);
-	retval = target_alloc_working_area(target, ALGO_WORKING_SIZE,
-				&cc3220sf_bank->working_area);
+	/* Obtain working area to use for flash helper algorithm */
+	retval = target_alloc_working_area(target, sizeof(cc3220sf_algo),
+				&algo_working_area);
 	if (ERROR_OK != retval)
 		return retval;
 
-	/* Confirm the defined working address is the area we need to use */
-	if (ALGO_BASE_ADDR != cc3220sf_bank->working_area->address)
-		return ERROR_TARGET_RESOURCE_NOT_AVAILABLE;
+	/* Obtain working area to use for flash buffer */
+	retval = target_alloc_working_area(target,
+				target_get_working_area_avail(target), &buffer_working_area);
+	if (ERROR_OK != retval) {
+		target_free_working_area(target, algo_working_area);
+		return retval;
+	}
+
+	algo_base_address = algo_working_area->address;
+	algo_buffer_address = buffer_working_area->address;
+	algo_buffer_size = buffer_working_area->size;
+
+	/* Make sure buffer size is a multiple of 32 word (0x80 byte) chunks */
+	/* (algo runs more efficiently if it operates on 32 words at a time) */
+	if (algo_buffer_size > 0x80)
+		algo_buffer_size &= ~0x7f;
 
 	/* Write flash helper algorithm into target memory */
-	retval = target_write_buffer(target, ALGO_BASE_ADDR,
+	retval = target_write_buffer(target, algo_base_address,
 				sizeof(cc3220sf_algo), cc3220sf_algo);
-	if (ERROR_OK != retval)
+	if (ERROR_OK != retval) {
+		target_free_working_area(target, algo_working_area);
+		target_free_working_area(target, buffer_working_area);
 		return retval;
+	}
 
 	/* Initialize the ARMv7m specific info to run the algorithm */
 	cc3220sf_bank->armv7m_info.common_magic = ARMV7M_COMMON_MAGIC;
@@ -251,30 +247,94 @@ static int cc3220sf_write(struct flash_bank *bank, const uint8_t *buffer,
 	address = FLASH_BASE_ADDR + offset;
 	remaining = count;
 
-	while (remaining > 0) {
-		/* Helper parameters are passed in registers R0-R2 */
-		/* Set address to write to and start of data buffer */
-		buf_set_u32(reg_params[0].value, 0, 32, ALGO_BUFFER_ADDR);
+	/* The flash hardware can only write complete words to flash. If
+	 * an unaligned address is passed in, we must do a read-modify-write
+	 * on a word with enough bytes to align the rest of the buffer. And
+	 * if less than a whole word remains at the end, we must also do a
+	 * read-modify-write on a final word to finish up.
+	 */
+
+	/* Do one word write to align address on 32-bit boundary if needed */
+	if (0 != (address & 0x3)) {
+		uint8_t head[4];
+
+		/* Get starting offset for data to write (will be 1 to 3) */
+		uint32_t head_offset = address & 0x03;
+
+		/* Get the aligned address to write this first word to */
+		uint32_t head_address = address & 0xfffffffc;
+
+		/* Retrieve what is already in flash at the head address */
+		retval = target_read_buffer(target, head_address, sizeof(head), head);
+
+		if (ERROR_OK == retval) {
+			/* Substitute in the new data to write */
+			while ((remaining > 0) && (head_offset < 4)) {
+				head[head_offset] = *buffer;
+				head_offset++;
+				address++;
+				buffer++;
+				remaining--;
+			}
+		}
+
+		if (ERROR_OK == retval) {
+			/* Helper parameters are passed in registers R0-R2 */
+			/* Set start of data buffer, address to write to, and word count */
+			buf_set_u32(reg_params[0].value, 0, 32, algo_buffer_address);
+			buf_set_u32(reg_params[1].value, 0, 32, head_address);
+			buf_set_u32(reg_params[2].value, 0, 32, 1);
+
+			/* Write head value into buffer to flash */
+			retval = target_write_buffer(target, algo_buffer_address,
+						sizeof(head), head);
+		}
+
+		if (ERROR_OK == retval) {
+			/* Execute the flash helper algorithm */
+			retval = target_run_algorithm(target, 0, NULL, 3, reg_params,
+						algo_base_address, 0, FLASH_TIMEOUT,
+						&cc3220sf_bank->armv7m_info);
+			if (ERROR_OK != retval)
+				LOG_ERROR("cc3220sf: Flash algorithm failed to run");
+
+			/* Check that the head value was written to flash */
+			result = buf_get_u32(reg_params[2].value, 0, 32);
+			if (0 != result) {
+				retval = ERROR_FAIL;
+				LOG_ERROR("cc3220sf: Flash operation failed");
+			}
+		}
+	}
+
+	/* Check if there's data at end of buffer that isn't a full word */
+	uint32_t tail_count = remaining & 0x03;
+	/* Adjust remaining so it is a multiple of whole words */
+	remaining -= tail_count;
+
+	while ((ERROR_OK == retval) && (remaining > 0)) {
+		/* Set start of data buffer and address to write to */
+		buf_set_u32(reg_params[0].value, 0, 32, algo_buffer_address);
 		buf_set_u32(reg_params[1].value, 0, 32, address);
 
 		/* Download data to write into memory buffer */
-		if (remaining >= ALGO_BUFFER_SIZE) {
+		if (remaining >= algo_buffer_size) {
 			/* Fill up buffer with data to flash */
-			retval = target_write_buffer(target, ALGO_BUFFER_ADDR,
-						ALGO_BUFFER_SIZE, buffer);
+			retval = target_write_buffer(target, algo_buffer_address,
+						algo_buffer_size, buffer);
 			if (ERROR_OK != retval)
 				break;
 
 			/* Count to write is in 32-bit words */
-			words = ALGO_BUFFER_SIZE / 4;
+			words = algo_buffer_size / 4;
 
 			/* Bump variables to next data */
-			address += ALGO_BUFFER_SIZE;
-			buffer += ALGO_BUFFER_SIZE;
-			remaining -= ALGO_BUFFER_SIZE;
+			address += algo_buffer_size;
+			buffer += algo_buffer_size;
+			remaining -= algo_buffer_size;
 		} else {
 			/* Fill buffer with what's left of the data */
-			retval = target_write_buffer(target, ALGO_BUFFER_ADDR,
+			retval = target_write_buffer(target, algo_buffer_address,
 						remaining, buffer);
 			if (ERROR_OK != retval)
 				break;
@@ -284,7 +344,9 @@ static int cc3220sf_write(struct flash_bank *bank, const uint8_t *buffer,
 			if (0 != (remaining % 4))
 				words++;
 
-			/* All done after this last buffer */
+			/* Bump variables to any final data */
+			address += remaining;
+			buffer += remaining;
 			remaining = 0;
 		}
 
@@ -292,8 +354,8 @@ static int cc3220sf_write(struct flash_bank *bank, const uint8_t *buffer,
 		buf_set_u32(reg_params[2].value, 0, 32, words);
 
 		/* Execute the flash helper algorithm */
-		retval = target_run_algorithm(target, 0, 0, 3, reg_params,
-					ALGO_BASE_ADDR, 0, FLASH_TIMEOUT,
+		retval = target_run_algorithm(target, 0, NULL, 3, reg_params,
+					algo_base_address, 0, FLASH_TIMEOUT,
 					&cc3220sf_bank->armv7m_info);
 		if (ERROR_OK != retval) {
 			LOG_ERROR("cc3220sf: Flash algorithm failed to run");
@@ -309,29 +371,66 @@ static int cc3220sf_write(struct flash_bank *bank, const uint8_t *buffer,
 		}
 	}
 
+	/* Do one word write for any final bytes less than a full word */
+	if ((ERROR_OK == retval) && (0 != tail_count)) {
+		uint8_t tail[4];
+
+		/* Set starting byte offset for data to write */
+		uint32_t tail_offset = 0;
+
+		/* Retrieve what is already in flash at the tail address */
+		retval = target_read_buffer(target, address, sizeof(tail), tail);
+
+		if (ERROR_OK == retval) {
+			/* Substitute in the new data to write */
+			while (tail_count > 0) {
+				tail[tail_offset] = *buffer;
+				tail_offset++;
+				buffer++;
+				tail_count--;
+			}
+		}
+
+		if (ERROR_OK == retval) {
+			/* Set start of data buffer, address to write to, and word count */
+			buf_set_u32(reg_params[0].value, 0, 32, algo_buffer_address);
+			buf_set_u32(reg_params[1].value, 0, 32, address);
+			buf_set_u32(reg_params[2].value, 0, 32, 1);
+
+			/* Write tail value into buffer to flash */
+			retval = target_write_buffer(target, algo_buffer_address,
+						sizeof(tail), tail);
+		}
+
+		if (ERROR_OK == retval) {
+			/* Execute the flash helper algorithm */
+			retval = target_run_algorithm(target, 0, NULL, 3, reg_params,
+						algo_base_address, 0, FLASH_TIMEOUT,
+						&cc3220sf_bank->armv7m_info);
+			if (ERROR_OK != retval)
+				LOG_ERROR("cc3220sf: Flash algorithm failed to run");
+
+			/* Check that the tail was written to flash */
+			result = buf_get_u32(reg_params[2].value, 0, 32);
+			if (0 != result) {
+				retval = ERROR_FAIL;
+				LOG_ERROR("cc3220sf: Flash operation failed");
+			}
+		}
+	}
+
 	/* Free resources  */
 	destroy_reg_param(&reg_params[0]);
 	destroy_reg_param(&reg_params[1]);
 	destroy_reg_param(&reg_params[2]);
-
-	target_free_working_area(target, cc3220sf_bank->working_area);
-	cc3220sf_bank->working_area = 0;
-
-	if (ERROR_OK == retval) {
-		/* Mark flashed sectors as "not erased" */
-		while (offset <= end_address) {
-			sector = offset / FLASH_SECTOR_SIZE;
-			bank->sectors[sector].is_erased = 0;
-			offset += FLASH_SECTOR_SIZE;
-		}
-	}
+	target_free_working_area(target, algo_working_area);
+	target_free_working_area(target, buffer_working_area);
 
 	return retval;
 }
 
 static int cc3220sf_probe(struct flash_bank *bank)
 {
-	struct target *target = bank->target;
 	struct cc3220sf_bank *cc3220sf_bank = bank->driver_priv;
 
 	uint32_t base;
@@ -340,11 +439,6 @@ static int cc3220sf_probe(struct flash_bank *bank)
 	int bank_id;
 
 	bank_id = bank->bank_number;
-
-	if (TARGET_HALTED != target->state) {
-		LOG_ERROR("Target not halted");
-		return ERROR_TARGET_NOT_HALTED;
-	}
 
 	if (0 == bank_id) {
 		base = FLASH_BASE_ADDR;
@@ -355,13 +449,13 @@ static int cc3220sf_probe(struct flash_bank *bank)
 		return ERROR_FAIL;
 	}
 
-	if (0 != bank->sectors) {
+	if (NULL != bank->sectors) {
 		free(bank->sectors);
-		bank->sectors = 0;
+		bank->sectors = NULL;
 	}
 
 	bank->sectors = malloc(sizeof(struct flash_sector) * num_sectors);
-	if (0 == bank->sectors)
+	if (NULL == bank->sectors)
 		return ERROR_FAIL;
 
 	bank->base = base;
@@ -375,7 +469,7 @@ static int cc3220sf_probe(struct flash_bank *bank)
 		bank->sectors[i].is_protected = 0;
 	}
 
-	/* We've successfully determined the stats on this flash bank */
+	/* We've successfully recorded the stats on this flash bank */
 	cc3220sf_bank->probed = true;
 
 	/* If we fall through to here, then all went well */
@@ -407,14 +501,11 @@ static int cc3220sf_protect_check(struct flash_bank *bank)
 
 static int cc3220sf_info(struct flash_bank *bank, char *buf, int buf_size)
 {
-	int printed = 0;
+	int printed;
 
 	printed = snprintf(buf, buf_size, "CC3220SF with 1MB internal flash\n");
 
-	buf += printed;
-	buf_size -= printed;
-
-	if (0 > buf_size)
+	if (printed >= buf_size)
 		return ERROR_BUF_TOO_SMALL;
 
 	return ERROR_OK;
