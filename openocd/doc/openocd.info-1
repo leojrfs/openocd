@@ -1,8 +1,8 @@
 This is openocd.info, produced by makeinfo version 6.1 from
 openocd.texi.
 
-This User's Guide documents release 0.10.0, dated 18 December 2017, of
-the Open On-Chip Debugger (OpenOCD).
+This User's Guide documents release 0.10.0, dated 13 June 2018, of the
+Open On-Chip Debugger (OpenOCD).
 
    * Copyright (C) 2008 The OpenOCD Project
    * Copyright (C) 2007-2008 Spencer Oliver <spen@spen-soft.co.uk>
@@ -27,8 +27,8 @@ File: openocd.info,  Node: Top,  Next: About,  Up: (dir)
 OpenOCD User's Guide
 ********************
 
-This User's Guide documents release 0.10.0, dated 18 December 2017, of
-the Open On-Chip Debugger (OpenOCD).
+This User's Guide documents release 0.10.0, dated 13 June 2018, of the
+Open On-Chip Debugger (OpenOCD).
 
    * Copyright (C) 2008 The OpenOCD Project
    * Copyright (C) 2007-2008 Spencer Oliver <spen@spen-soft.co.uk>
@@ -524,6 +524,13 @@ connecting debuggers to ARM Cortex based targets
 
    * Keil ULINK v1
      Link: <http://www.keil.com/ulink1/>
+
+   * TI XDS110 Debug Probe
+     The XDS110 is included as the embedded debug probe on many Texas
+     Instruments LaunchPad evaluation boards.
+     Link: <http://processors.wiki.ti.com/index.php/XDS110>
+     Link:
+     <http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS110_Support_Utilities>
 
 2.11 IBM PC Parallel Printer Port Based
 =======================================
@@ -4515,6 +4522,28 @@ activate driver-specific commands.
      The AVR 8-bit microcontrollers from Atmel integrate flash memory.
      _The current implementation is incomplete._
 
+ -- Flash Driver: cc26xx
+     All versions of the SimpleLink CC13xx and CC26xx microcontrollers
+     from Texas Instruments include internal flash.  The cc26xx flash
+     driver supports both the CC13xx and CC26xx family of devices.  The
+     driver automatically recognizes the specific version's flash
+     parameters and autoconfigures itself.  Flash bank 0 starts at
+     address 0.
+
+          flash bank $_FLASHNAME cc26xx 0 0 0 0 $_TARGETNAME
+
+ -- Flash Driver: cc3220sf
+     The CC3220SF version of the SimpleLink CC32xx microcontrollers from
+     Texas Instruments includes 1MB of internal flash.  The cc3220sf
+     flash driver only supports the internal flash.  The serial flash on
+     SimpleLink boards is programmed via the bootloader over a UART
+     connection.  Security features of the CC3220SF may erase the
+     internal flash during power on reset.  Refer to documentation at
+     <www.ti.com/cc3220sf> for details on security features and
+     programming the serial flash.
+
+          flash bank $_FLASHNAME cc3220sf 0 0 0 0 $_TARGETNAME
+
  -- Flash Driver: efm32
      All members of the EFM32 microcontroller family from Energy Micro
      include internal flash and use ARM Cortex-M3 cores.  The driver
@@ -4820,6 +4849,37 @@ activate driver-specific commands.
              flash bank $_CHIPNAME.flash mdr 0x00000000 0x20000 \
                    0 0 $_TARGETNAME 0 32 4
           }
+
+ -- Flash Driver: msp432
+     All versions of the SimpleLink MSP432 microcontrollers from Texas
+     Instruments include internal flash.  The msp432 flash driver
+     automatically recognizes the specific version's flash parameters
+     and autoconfigures itself.  Main program flash (starting at address
+     0) is flash bank 0.  Information flash region on MSP432P4 versions
+     (starting at address 0x200000) is flash bank 1.
+
+          flash bank $_FLASHNAME msp432 0 0 0 0 $_TARGETNAME
+
+      -- Command: msp432 mass_erase [main|all]
+          Performs a complete erase of flash.  By default, 'mass_erase'
+          will erase only the main program flash.
+
+          On MSP432P4 versions, using 'mass_erase all' will erase both
+          the main program and information flash regions.  To also erase
+          the BSL in information flash, the user must first use the
+          'bsl' command.
+
+      -- Command: msp432 bsl [unlock|lock]
+          On MSP432P4 versions, 'bsl' unlocks and locks the bootstrap
+          loader (BSL) region in information flash so that flash
+          commands can erase or write the BSL. Leave the BSL locked to
+          prevent accidentally corrupting the bootstrap loader.
+
+          To erase and program the BSL:
+               msp432 bsl unlock
+               flash erase_address 0x202000 0x2000
+               flash write_image bsl.bin 0x202000
+               msp432 bsl lock
 
  -- Flash Driver: niietcm4
      This drivers handles the integrated NOR flash on NIIET Cortex-M4

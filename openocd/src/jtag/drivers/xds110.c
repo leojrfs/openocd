@@ -26,10 +26,6 @@
 #include <jtag/tcl.h>
 #include <libusb.h>
 
-#if defined(__APPLE_CC__)
-#pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-
 /* XDS110 USB serial number length */
 #define XDS110_SERIAL_LEN 8
 
@@ -77,7 +73,7 @@
 #define DEFAULT_ATTEMPTS (1)
 #define DEFAULT_TIMEOUT  (4000)
 
-/* Error codes */
+/* XDS110 API error codes */
 #define SC_ERR_NONE             0
 #define SC_ERR_XDS110_FAIL   -261
 #define SC_ERR_SWD_WAIT      -613
@@ -146,7 +142,7 @@
 #define XDS_OUT_LEN 1 /* command (byte) */
 #define XDS_IN_LEN  4 /* error code (int) */
 
-/* XDS Commands */
+/* XDS API Commands */
 #define XDS_CONNECT      0x01 /* Connect JTAG connection */
 #define XDS_DISCONNECT   0x02 /* Disconnect JTAG connection */
 #define XDS_VERSION      0x03 /* Get firmware version and hardware ID */
@@ -175,7 +171,7 @@
 #define CMD_RUNTEST      3
 #define CMD_STABLECLOCKS 4
 
-/* Array to convert from tap_state_t to XDS JTAG state */
+/* Array to convert from OpenOCD tap_state_t to XDS JTAG state */
 const uint32_t xds_jtag_state[] = {
 	XDS_JTAG_STATE_EXIT2_DR,   /* TAP_DREXIT2   = 0x0 */
 	XDS_JTAG_STATE_EXIT1_DR,   /* TAP_DREXIT1   = 0x1 */
@@ -236,8 +232,8 @@ struct xds110_info {
 };
 
 static struct xds110_info xds110 = {
-	.ctx = 0,
-	.dev = 0,
+	.ctx = NULL,
+	.dev = NULL,
 	.is_connected = false,
 	.is_cmapi_connected = false,
 	.is_cmapi_acquired = false,
@@ -253,6 +249,36 @@ static struct xds110_info xds110 = {
 	.txn_result_count = 0
 };
 
+static inline void xds110_set_u32(uint8_t *buffer, uint32_t value)
+{
+	buffer[3] = (value >> 24) & 0xff;
+	buffer[2] = (value >> 16) & 0xff;
+	buffer[1] = (value >> 8) & 0xff;
+	buffer[0] = (value >> 0) & 0xff;
+}
+
+static inline void xds110_set_u16(uint8_t *buffer, uint16_t value)
+{
+	buffer[1] = (value >> 8) & 0xff;
+	buffer[0] = (value >> 0) & 0xff;
+}
+
+static inline uint32_t xds110_get_u32(uint8_t *buffer)
+{
+	uint32_t value = (((uint32_t)buffer[3]) << 24) |
+					 (((uint32_t)buffer[2]) << 16) |
+					 (((uint32_t)buffer[1]) << 8)  |
+					 (((uint32_t)buffer[0]) << 0);
+	return value;
+}
+
+static inline uint16_t xds110_get_u16(uint8_t *buffer)
+{
+	uint16_t value = (((uint32_t)buffer[1]) << 8) |
+					 (((uint32_t)buffer[0]) << 0);
+	return value;
+}
+
 /***************************************************************************
  *   usb connection routines                                               *
  *                                                                         *
@@ -262,9 +288,9 @@ static struct xds110_info xds110 = {
 
 static bool usb_connect(void)
 {
-	libusb_context *ctx  = 0;
-	libusb_device **list = 0;
-	libusb_device_handle *dev  = 0;
+	libusb_context *ctx  = NULL;
+	libusb_device **list = NULL;
+	libusb_device_handle *dev  = NULL;
 
 	struct libusb_device_descriptor desc;
 
@@ -283,7 +309,7 @@ static bool usb_connect(void)
 		count = libusb_get_device_list(ctx, &list);
 		if (count <= 0) {
 			result = -1;
-			list = 0;
+			list = NULL;
 		}
 	}
 
@@ -317,7 +343,7 @@ static bool usb_connect(void)
 
 					/* If we fall though to here, we don't want this device */
 					libusb_close(dev);
-					dev = 0;
+					dev = NULL;
 				}
 			}
 		}
@@ -329,7 +355,7 @@ static bool usb_connect(void)
 	 * 2) didn't find the XDS110, and no devices are currently open
 	 */
 
-	if (0 != list) {
+	if (NULL != list) {
 		/* Free the device list, we're done with it */
 		libusb_free_device_list(list, 1);
 	}
@@ -339,9 +365,8 @@ static bool usb_connect(void)
 		xds110.ctx = ctx;
 		xds110.dev = dev;
 
-		/* Set libusb to auto detach kernel and disable debug messages */
+		/* Set libusb to auto detach kernel */
 		(void)libusb_set_auto_detach_kernel_driver(dev, 1);
-		libusb_set_debug(ctx, LIBUSB_LOG_LEVEL_NONE);
 
 		/* Claim the debug interface on the XDS110 */
 		result = libusb_claim_interface(dev, INTERFACE_DEBUG);
@@ -352,18 +377,15 @@ static bool usb_connect(void)
 
 	/* On an error, clean up what we can */
 	if (0 != result) {
-		if (0 != dev) {
+		if (NULL != dev) {
 			/* Release the debug and data interface on the XDS110 */
 			(void)libusb_release_interface(dev, INTERFACE_DEBUG);
 			libusb_close(dev);
-			dev = 0;
 		}
-		if (0 != ctx) {
+		if (NULL != ctx)
 			libusb_exit(ctx);
-			ctx = 0;
-		}
-		xds110.ctx = 0;
-		xds110.dev = 0;
+		xds110.ctx = NULL;
+		xds110.dev = NULL;
 	}
 
 	/* Log the results */
@@ -377,15 +399,15 @@ static bool usb_connect(void)
 
 static void usb_disconnect(void)
 {
-	if (0 != xds110.dev) {
+	if (NULL != xds110.dev) {
 		/* Release the debug and data interface on the XDS110 */
 		(void)libusb_release_interface(xds110.dev, INTERFACE_DEBUG);
 		libusb_close(xds110.dev);
-		xds110.dev = 0;
+		xds110.dev = NULL;
 	}
-	if (0 != xds110.ctx) {
+	if (NULL != xds110.ctx) {
 		libusb_exit(xds110.ctx);
-		xds110.ctx = 0;
+		xds110.ctx = NULL;
 	}
 
 	LOG_INFO("XDS110: disconnected");
@@ -396,8 +418,12 @@ static bool usb_read(unsigned char *buffer, int size, int *bytes_read,
 {
 	int result;
 
-	if (0 == xds110.dev || 0 == buffer || 0 == bytes_read)
+	if (NULL == xds110.dev || NULL == buffer || NULL == bytes_read)
 		return false;
+
+	/* Force a non-zero timeout to prevent blocking */
+	if (0 == timeout)
+		timeout = DEFAULT_TIMEOUT;
 
 	result = libusb_bulk_transfer(xds110.dev, ENDPOINT_DEBUG_IN, buffer, size,
 				bytes_read, timeout);
@@ -411,7 +437,7 @@ static bool usb_write(unsigned char *buffer, int size, int *written)
 	int result = LIBUSB_SUCCESS;
 	int retries = 0;
 
-	if (0 == xds110.dev || 0 == buffer)
+	if (NULL == xds110.dev || NULL == buffer)
 		return false;
 
 	result = libusb_bulk_transfer(xds110.dev, ENDPOINT_DEBUG_OUT, buffer,
@@ -425,7 +451,7 @@ static bool usb_write(unsigned char *buffer, int size, int *written)
 		retries++;
 	}
 
-	if (0 != written)
+	if (NULL != written)
 		*written = bytes_written;
 
 	return (0 == result && size == bytes_written) ? true : false;
@@ -439,10 +465,6 @@ static bool usb_get_response(uint32_t *total_bytes_read, uint32_t timeout)
 	uint16_t count;
 	bool success;
 
-	/* Set a non-zero timeout to prevent blocking */
-	if (0 == timeout)
-		timeout = DEFAULT_TIMEOUT;
-
 	size = 0;
 	success = true;
 	while (success) {
@@ -455,7 +477,7 @@ static bool usb_get_response(uint32_t *total_bytes_read, uint32_t timeout)
 			 */
 			if (bytes_read >= 7 && '*' == buffer[0]) {
 				/* Extract the payload size */
-				size = buffer[1] + (buffer[2] << 8);
+				size = xds110_get_u16(&buffer[1]);
 				/* Sanity test on payload size */
 				if (USB_PAYLOAD_SIZE >= size && 4 <= size) {
 					/* Check we didn't get more data than expected */
@@ -474,7 +496,7 @@ static bool usb_get_response(uint32_t *total_bytes_read, uint32_t timeout)
 
 	/* Abort now if we didn't receive a valid response */
 	if (!success) {
-		if (0 != total_bytes_read)
+		if (NULL != total_bytes_read)
 			*total_bytes_read = 0;
 		return false;
 	}
@@ -511,13 +533,13 @@ static bool usb_get_response(uint32_t *total_bytes_read, uint32_t timeout)
 
 	if (!success)
 		count = 0;
-	if (0 != total_bytes_read)
+	if (NULL != total_bytes_read)
 		*total_bytes_read = count;
 
 	return success;
 }
 
-static bool usb_send_command(uint32_t size)
+static bool usb_send_command(uint16_t size)
 {
 	int written;
 	bool success = true;
@@ -530,8 +552,7 @@ static bool usb_send_command(uint32_t size)
 	xds110.write_packet[0] = '*';
 
 	/* Place the payload size into the packet buffer */
-	xds110.write_packet[1] = (size & 0x00ff) >> 0;
-	xds110.write_packet[2] = (size & 0xff00) >> 8;
+	xds110_set_u16(&xds110.write_packet[1], size);
 
 	/* Adjust size to include header */
 	size += 3;
@@ -559,10 +580,9 @@ static bool xds_execute(uint32_t out_length, uint32_t in_length,
 	bool done = false;
 	bool success = true;
 	int error = 0;
-	int *error_pntr;
 	uint32_t bytes_read = 0;
 
-	if (0 == xds110.dev)
+	if (NULL == xds110.dev)
 		return false;
 
 	while (!done && attempts > 0) {
@@ -571,9 +591,10 @@ static bool xds_execute(uint32_t out_length, uint32_t in_length,
 		/* Send command to XDS110 */
 		success = usb_send_command(out_length);
 
-		if (success)
+		if (success) {
 			/* Get response from XDS110 */
 			success = usb_get_response(&bytes_read, timeout);
+		}
 
 		if (success) {
 			/* Check for valid response from XDS code handling */
@@ -582,8 +603,7 @@ static bool xds_execute(uint32_t out_length, uint32_t in_length,
 				success = false;
 			} else {
 				/* Extract error code from return packet */
-				error_pntr = (int *)&xds110.read_payload[0];
-				error = *error_pntr;
+				error = (int)xds110_get_u32(&xds110.read_payload[0]);
 				done = true;
 			}
 		}
@@ -624,24 +644,21 @@ static bool xds_disconnect(void)
 
 static bool xds_version(uint32_t *firmware_id, uint16_t *hardware_id)
 {
-	uint32_t *fw_id_pntr;
-	uint16_t *hw_id_pntr;
-
-	fw_id_pntr = (uint32_t *)&xds110.read_payload[XDS_IN_LEN+0];
-	hw_id_pntr = (uint16_t *)&xds110.read_payload[XDS_IN_LEN+4];
+	uint8_t *fw_id_pntr = &xds110.read_payload[XDS_IN_LEN + 0]; /* 32-bits */
+	uint8_t *hw_id_pntr = &xds110.read_payload[XDS_IN_LEN + 4]; /* 16-bits */
 
 	bool success;
 
 	xds110.write_payload[0] = XDS_VERSION;
 
-	success = xds_execute(XDS_OUT_LEN, XDS_IN_LEN+6, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN, XDS_IN_LEN + 6, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	if (success) {
-		if (0 != firmware_id)
-			*firmware_id = *fw_id_pntr;
-		if (0 != hardware_id)
-			*hardware_id = *hw_id_pntr;
+		if (NULL != firmware_id)
+			*firmware_id = xds110_get_u32(fw_id_pntr);
+		if (NULL != hardware_id)
+			*hardware_id = xds110_get_u16(hw_id_pntr);
 	}
 
 	return success;
@@ -649,17 +666,15 @@ static bool xds_version(uint32_t *firmware_id, uint16_t *hardware_id)
 
 static bool xds_set_tck_delay(uint32_t delay)
 {
-	uint32_t *delay_pntr;
-
-	delay_pntr = (uint32_t *)&xds110.write_payload[XDS_OUT_LEN+0];
+	uint8_t *delay_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 32-bits */
 
 	bool success;
 
 	xds110.write_payload[0] = XDS_SET_TCK;
 
-	*delay_pntr = delay;
+	xds110_set_u32(delay_pntr, delay);
 
-	success = xds_execute(XDS_OUT_LEN+4, XDS_IN_LEN, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 4, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	return success;
@@ -667,9 +682,7 @@ static bool xds_set_tck_delay(uint32_t delay)
 
 static bool xds_set_trst(uint8_t trst)
 {
-	uint8_t *trst_pntr;
-
-	trst_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+0];
+	uint8_t *trst_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 8-bits */
 
 	bool success;
 
@@ -677,7 +690,7 @@ static bool xds_set_trst(uint8_t trst)
 
 	*trst_pntr = trst;
 
-	success = xds_execute(XDS_OUT_LEN+1, XDS_IN_LEN, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 1, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	return success;
@@ -685,36 +698,31 @@ static bool xds_set_trst(uint8_t trst)
 
 static bool xds_cycle_tck(uint32_t count)
 {
-	uint32_t *count_pntr;
-
-	count_pntr = (uint32_t *)&xds110.write_payload[XDS_OUT_LEN+0];
+	uint8_t *count_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 32-bits */
 
 	bool success;
 
 	xds110.write_payload[0] = XDS_CYCLE_TCK;
 
-	*count_pntr = count;
+	xds110_set_u32(count_pntr, count);
 
-	success = xds_execute(XDS_OUT_LEN+4, XDS_IN_LEN, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 4, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	return success;
 }
 
-static bool xds_goto_state(uint32_t state, uint32_t transit)
+static bool xds_goto_state(uint32_t state)
 {
-	uint32_t *state_pntr;
-	uint32_t *transit_pntr;
-
-	state_pntr = (uint32_t *)&xds110.write_payload[XDS_OUT_LEN+0];
-	transit_pntr = (uint32_t *)&xds110.write_payload[XDS_OUT_LEN+4];
+	uint8_t *state_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 32-bits */
+	uint8_t *transit_pntr = &xds110.write_payload[XDS_OUT_LEN+4]; /* 32-bits */
 
 	bool success;
 
 	xds110.write_payload[0] = XDS_GOTO_STATE;
 
-	*state_pntr = state;
-	*transit_pntr = transit;
+	xds110_set_u32(state_pntr, state);
+	xds110_set_u32(transit_pntr, XDS_JTAG_TRANSIT_QUICKEST);
 
 	success = xds_execute(XDS_OUT_LEN+8, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
@@ -722,73 +730,55 @@ static bool xds_goto_state(uint32_t state, uint32_t transit)
 	return success;
 }
 
-static bool xds_jtag_scan(uint32_t shift_bits, uint32_t shift_state,
-	uint32_t begin_transit, uint32_t end_state, uint32_t end_transit,
-	uint32_t preamble, uint32_t posamble, uint32_t delay_tcks,
-	uint32_t repeat_count, uint32_t repeat_out_offset,
-	uint32_t repeat_in_offset, uint8_t *data_out, uint8_t *data_in,
-	uint32_t bytes_to_send, uint32_t bytes_to_receive)
+static bool xds_jtag_scan(uint32_t shift_state, uint16_t shift_bits,
+	uint32_t end_state, uint8_t *data_out, uint8_t *data_in)
 {
-	uint16_t *shift_bits_pntr;
-	uint8_t *shift_state_pntr;
-	uint8_t *begin_transit_pntr;
-	uint8_t *end_state_pntr;
-	uint8_t *end_transit_pntr;
-	uint16_t *preamble_pntr;
-	uint16_t *posamble_pntr;
-	uint16_t *delay_tcks_pntr;
-	uint16_t *repeat_count_pntr;
-	uint16_t *repeat_out_offset_pntr;
-	uint16_t *repeat_in_offset_pntr;
-	uint8_t *data_out_pntr;
-	uint8_t *data_in_pntr;
+	uint8_t *bits_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 16-bits */
+	uint8_t *path_pntr = &xds110.write_payload[XDS_OUT_LEN + 2]; /* 8-bits */
+	uint8_t *trans1_pntr = &xds110.write_payload[XDS_OUT_LEN + 3]; /* 8-bits */
+	uint8_t *end_pntr = &xds110.write_payload[XDS_OUT_LEN + 4]; /* 8-bits */
+	uint8_t *trans2_pntr = &xds110.write_payload[XDS_OUT_LEN + 5]; /* 8-bits */
+	uint8_t *pre_pntr = &xds110.write_payload[XDS_OUT_LEN + 6]; /* 16-bits */
+	uint8_t *pos_pntr = &xds110.write_payload[XDS_OUT_LEN + 8]; /* 16-bits */
+	uint8_t *delay_pntr = &xds110.write_payload[XDS_OUT_LEN + 10]; /* 16-bits */
+	uint8_t *rep_pntr = &xds110.write_payload[XDS_OUT_LEN + 12]; /* 16-bits */
+	uint8_t *out_pntr = &xds110.write_payload[XDS_OUT_LEN + 14]; /* 16-bits */
+	uint8_t *in_pntr = &xds110.write_payload[XDS_OUT_LEN + 16]; /* 16-bits */
+	uint8_t *data_out_pntr = &xds110.write_payload[XDS_OUT_LEN + 18];
+	uint8_t *data_in_pntr = &xds110.read_payload[XDS_IN_LEN+0];
 
-	shift_bits_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+0];
-	shift_state_pntr = (uint8_t*)&xds110.write_payload[XDS_OUT_LEN+2];
-	begin_transit_pntr = (uint8_t*)&xds110.write_payload[XDS_OUT_LEN+3];
-	end_state_pntr = (uint8_t*)&xds110.write_payload[XDS_OUT_LEN+4];
-	end_transit_pntr = (uint8_t*)&xds110.write_payload[XDS_OUT_LEN+5];
-	preamble_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+6];
-	posamble_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+8];
-	delay_tcks_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+10];
-	repeat_count_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+12];
-	repeat_out_offset_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+14];
-	repeat_in_offset_pntr = (uint16_t*)&xds110.write_payload[XDS_OUT_LEN+16];
-	data_out_pntr = (uint8_t*)&xds110.write_payload[XDS_OUT_LEN+18];
-	data_in_pntr = (uint8_t*)&xds110.read_payload[XDS_IN_LEN+0];
+	uint16_t total_bytes = DIV_ROUND_UP(shift_bits, 8);
 
 	bool success;
 
 	xds110.write_payload[0] = XDS_JTAG_SCAN;
 
-	*shift_bits_pntr = (uint16_t)shift_bits;
-	*shift_state_pntr = (uint8_t)shift_state;
-	*begin_transit_pntr = (uint8_t)begin_transit;
-	*end_state_pntr = (uint8_t)end_state;
-	*end_transit_pntr = (uint8_t)end_transit;
-	*preamble_pntr = (uint16_t)preamble;
-	*posamble_pntr = (uint16_t)posamble;
-	*delay_tcks_pntr = (uint16_t)delay_tcks;
-	*repeat_count_pntr = (uint16_t)repeat_count;
-	*repeat_out_offset_pntr = (uint16_t)repeat_out_offset;
-	*repeat_in_offset_pntr = (uint16_t)repeat_in_offset;
+	xds110_set_u16(bits_pntr, shift_bits); /* bits to scan */
+	*path_pntr = (uint8_t)(shift_state & 0xff); /* IR vs DR path */
+	*trans1_pntr = (uint8_t)XDS_JTAG_TRANSIT_QUICKEST; /* start state route */
+	*end_pntr = (uint8_t)(end_state & 0xff); /* JTAG state after scan */
+	*trans2_pntr = (uint8_t)XDS_JTAG_TRANSIT_QUICKEST; /* end state route */
+	xds110_set_u16(pre_pntr, 0); /* number of preamble bits */
+	xds110_set_u16(pos_pntr, 0); /* number of postamble bits */
+	xds110_set_u16(delay_pntr, 0); /* number of extra TCKs after scan */
+	xds110_set_u16(rep_pntr, 1); /* number of repetitions */
+	xds110_set_u16(out_pntr, total_bytes); /* out buffer offset (if repeats) */
+	xds110_set_u16(in_pntr, total_bytes); /* in buffer offset (if repeats) */
 
-	memcpy((void *)data_out_pntr, (void *)data_out, bytes_to_send);
+	memcpy((void *)data_out_pntr, (void *)data_out, total_bytes);
 
-	success = xds_execute(XDS_OUT_LEN+18+bytes_to_send,
-		XDS_IN_LEN+bytes_to_receive, DEFAULT_ATTEMPTS, DEFAULT_TIMEOUT);
+	success = xds_execute(XDS_OUT_LEN + 18 + total_bytes,
+		XDS_IN_LEN + total_bytes, DEFAULT_ATTEMPTS, DEFAULT_TIMEOUT);
 
 	if (success)
-		memcpy((void *)data_in, (void *)data_in_pntr, bytes_to_receive);
+		memcpy((void *)data_in, (void *)data_in_pntr, total_bytes);
 
 	return success;
 }
 
 static bool xds_set_srst(uint8_t srst)
 {
-	uint8_t *srst_pntr;
-
-	srst_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+0];
+	uint8_t *srst_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 8-bits */
 
 	bool success;
 
@@ -796,7 +786,7 @@ static bool xds_set_srst(uint8_t srst)
 
 	*srst_pntr = srst;
 
-	success = xds_execute(XDS_OUT_LEN+1, XDS_IN_LEN, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 1, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	return success;
@@ -804,9 +794,7 @@ static bool xds_set_srst(uint8_t srst)
 
 static bool cmapi_connect(uint32_t *idcode)
 {
-	uint32_t *idcode_pntr;
-
-	idcode_pntr = (uint32_t *)&xds110.read_payload[XDS_IN_LEN+0];
+	uint8_t *idcode_pntr = &xds110.read_payload[XDS_IN_LEN + 0]; /* 32-bits */
 
 	bool success;
 
@@ -816,8 +804,8 @@ static bool cmapi_connect(uint32_t *idcode)
 				DEFAULT_TIMEOUT);
 
 	if (success) {
-		if (0 != idcode)
-			*idcode = *idcode_pntr;
+		if (NULL != idcode)
+			*idcode = xds110_get_u32(idcode_pntr);
 	}
 
 	return success;
@@ -862,30 +850,25 @@ static bool cmapi_release(void)
 static bool cmapi_read_dap_reg(uint32_t type, uint32_t ap_num,
 	uint32_t address, uint32_t *value)
 {
-	uint8_t *type_pntr;
-	uint8_t *ap_num_pntr;
-	uint8_t *address_pntr;
-	uint8_t *value_pntr;
-
-	type_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+0];
-	ap_num_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+1];
-	address_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+2];
-	value_pntr = (uint8_t *)&xds110.read_payload[XDS_IN_LEN+0];
+	uint8_t *type_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 8-bits */
+	uint8_t *ap_num_pntr = &xds110.write_payload[XDS_OUT_LEN + 1]; /* 8-bits */
+	uint8_t *address_pntr = &xds110.write_payload[XDS_OUT_LEN + 2]; /* 8-bits */
+	uint8_t *value_pntr = &xds110.read_payload[XDS_IN_LEN + 0]; /* 32-bits */
 
 	bool success;
 
 	xds110.write_payload[0] = CMAPI_REG_READ;
 
-	*type_pntr = (uint8_t)type;
-	*ap_num_pntr = (uint8_t)ap_num;
-	*address_pntr = (uint8_t)address;
+	*type_pntr = (uint8_t)(type & 0xff);
+	*ap_num_pntr = (uint8_t)(ap_num & 0xff);
+	*address_pntr = (uint8_t)(address & 0xff);
 
-	success = xds_execute(XDS_OUT_LEN+3, XDS_IN_LEN+4, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 3, XDS_IN_LEN + 4, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	if (success) {
-		if (0 != value)
-			memcpy((void *)value, (void *)value_pntr, 4);
+		if (NULL != value)
+			*value = xds110_get_u32(value_pntr);
 	}
 
 	return success;
@@ -894,30 +877,24 @@ static bool cmapi_read_dap_reg(uint32_t type, uint32_t ap_num,
 static bool cmapi_write_dap_reg(uint32_t type, uint32_t ap_num,
 	uint32_t address, uint32_t *value)
 {
-	uint8_t *type_pntr;
-	uint8_t *ap_num_pntr;
-	uint8_t *address_pntr;
-	uint8_t *value_pntr;
-
-	type_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+0];
-	ap_num_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+1];
-	address_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+2];
-	value_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+3];
+	uint8_t *type_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 8-bits */
+	uint8_t *ap_num_pntr = &xds110.write_payload[XDS_OUT_LEN + 1]; /* 8-bits */
+	uint8_t *address_pntr = &xds110.write_payload[XDS_OUT_LEN + 2]; /* 8-bits */
+	uint8_t *value_pntr = &xds110.write_payload[XDS_OUT_LEN + 3]; /* 32-bits */
 
 	bool success;
 
-	if (0 == value)
+	if (NULL == value)
 		return false;
 
 	xds110.write_payload[0] = CMAPI_REG_WRITE;
 
-	*type_pntr = (uint8_t)type;
-	*ap_num_pntr = (uint8_t)ap_num;
-	*address_pntr = (uint8_t)address;
+	*type_pntr = (uint8_t)(type & 0xff);
+	*ap_num_pntr = (uint8_t)(ap_num & 0xff);
+	*address_pntr = (uint8_t)(address & 0xff);
+	xds110_set_u32(value_pntr, *value);
 
-	memcpy((void *)value_pntr, (void *)value, sizeof(uint32_t));
-
-	success = xds_execute(XDS_OUT_LEN+7, XDS_IN_LEN, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 7, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	return success;
@@ -949,17 +926,15 @@ static bool swd_disconnect(void)
 
 static bool cjtag_connect(uint32_t format)
 {
-	uint32_t *format_pntr;
-
-	format_pntr = (uint32_t *)&xds110.write_payload[XDS_OUT_LEN+0];
+	uint8_t *format_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 32-bits */
 
 	bool success;
 
 	xds110.write_payload[0] = CJTAG_CONNECT;
 
-	*format_pntr = format;
+	xds110_set_u32(format_pntr, format);
 
-	success = xds_execute(XDS_OUT_LEN+4, XDS_IN_LEN, DEFAULT_ATTEMPTS,
+	success = xds_execute(XDS_OUT_LEN + 4, XDS_IN_LEN, DEFAULT_ATTEMPTS,
 				DEFAULT_TIMEOUT);
 
 	return success;
@@ -980,15 +955,12 @@ static bool cjtag_disconnect(void)
 static bool ocd_dap_request(uint8_t *dap_requests, uint32_t request_size,
 	uint32_t *dap_results, uint32_t result_count)
 {
-	uint8_t *request_pntr;
-	uint8_t *result_pntr;
-
-	request_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+0];
-	result_pntr = (uint8_t *)&xds110.read_payload[XDS_IN_LEN+0];
+	uint8_t *request_pntr = &xds110.write_payload[XDS_OUT_LEN + 0];
+	uint8_t *result_pntr = &xds110.read_payload[XDS_IN_LEN + 0];
 
 	bool success;
 
-	if (0 == dap_requests || 0 == dap_results)
+	if (NULL == dap_requests || NULL == dap_results)
 		return false;
 
 	xds110.write_payload[0] = OCD_DAP_REQUEST;
@@ -1008,15 +980,12 @@ static bool ocd_dap_request(uint8_t *dap_requests, uint32_t request_size,
 static bool ocd_scan_request(uint8_t *scan_requests, uint32_t request_size,
 	uint8_t *scan_results, uint32_t result_size)
 {
-	uint8_t *request_pntr;
-	uint8_t *result_pntr;
-
-	request_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+0];
-	result_pntr = (uint8_t *)&xds110.read_payload[XDS_IN_LEN+0];
+	uint8_t *request_pntr = &xds110.write_payload[XDS_OUT_LEN + 0];
+	uint8_t *result_pntr = &xds110.read_payload[XDS_IN_LEN + 0];
 
 	bool success;
 
-	if (0 == scan_requests || 0 == scan_results)
+	if (NULL == scan_requests || NULL == scan_results)
 		return false;
 
 	xds110.write_payload[0] = OCD_SCAN_REQUEST;
@@ -1035,26 +1004,23 @@ static bool ocd_scan_request(uint8_t *scan_requests, uint32_t request_size,
 
 static bool ocd_pathmove(uint32_t num_states, uint8_t *path)
 {
-	uint32_t *num_states_pntr;
-	uint8_t *path_pntr;
-
-	num_states_pntr = (uint32_t *)&xds110.write_payload[XDS_OUT_LEN+0];
-	path_pntr = (uint8_t *)&xds110.write_payload[XDS_OUT_LEN+4];
+	uint8_t *num_pntr = &xds110.write_payload[XDS_OUT_LEN + 0]; /* 32-bits */
+	uint8_t *path_pntr = &xds110.write_payload[XDS_OUT_LEN + 4];
 
 	bool success;
 
-	if (0 == path)
+	if (NULL == path)
 		return false;
 
 	xds110.write_payload[0] = OCD_PATHMOVE;
 
-	*num_states_pntr = num_states;
+	xds110_set_u32(num_pntr, num_states);
 
 	memcpy((void *)path_pntr, (void *)path, num_states);
 
 	success = xds_execute(XDS_OUT_LEN + 4 + num_states, XDS_IN_LEN,
 				DEFAULT_ATTEMPTS, DEFAULT_TIMEOUT);
-	
+
 	return success;
 }
 
@@ -1072,8 +1038,51 @@ static int xds110_swd_init(void)
 
 static int xds110_swd_switch_seq(enum swd_special_seq seq)
 {
-	/* Not used for XDS110. The switch is handled during xds110_init() */
-	return ERROR_OK;
+	uint32_t idcode;
+	bool success;
+
+	switch (seq) {
+	case LINE_RESET:
+		LOG_ERROR("Sequence SWD line reset (%d) not supported", seq);
+		return ERROR_FAIL;
+	case JTAG_TO_SWD:
+		LOG_DEBUG("JTAG-to-SWD");
+		xds110.is_swd_mode = false;
+		xds110.is_cmapi_connected = false;
+		xds110.is_cmapi_acquired = false;
+		/* Run sequence to put target in SWD mode */
+		success = swd_connect();
+		/* Re-iniitialize CMAPI API for DAP access */
+		if (success) {
+			xds110.is_swd_mode = true;
+			success = cmapi_connect(&idcode);
+			if (success) {
+				xds110.is_cmapi_connected = true;
+				success = cmapi_acquire();
+			}
+		}
+		break;
+	case SWD_TO_JTAG:
+		LOG_DEBUG("SWD-to-JTAG");
+		xds110.is_swd_mode = false;
+		xds110.is_cmapi_connected = false;
+		xds110.is_cmapi_acquired = false;
+		/* Run sequence to put target in JTAG mode */
+		success = swd_disconnect();
+		if (success) {
+			/* Re-initialize JTAG interface */
+			success = cjtag_connect(MODE_JTAG);
+		}
+		break;
+	default:
+		LOG_ERROR("Sequence %d not supported", seq);
+		return ERROR_FAIL;
+	}
+
+	if (success)
+		return ERROR_OK;
+	else
+		return ERROR_FAIL;
 }
 
 static bool xds110_legacy_read_reg(uint8_t cmd, uint32_t *value)
@@ -1123,7 +1132,7 @@ static bool xds110_legacy_read_reg(uint8_t cmd, uint32_t *value)
 	/* Handle result of read attempt */
 	if (!success)
 		LOG_ERROR("XDS110: failed to read DAP register");
-	else if (0 != value)
+	else if (NULL != value)
 		*value = reg_value;
 
 	if (success && DAP_AP == type) {
@@ -1178,9 +1187,8 @@ static bool xds110_legacy_write_reg(uint8_t cmd, uint32_t value)
 		 * If the debugger wrote to SELECT, cache the value
 		 * to use to build the apNum and address values above
 		 */
-		if ((DAP_DP == type) && (DAP_DP_SELECT == address)) {
+		if ((DAP_DP == type) && (DAP_DP_SELECT == address))
 			xds110.select = value;
-		}
 	}
 
 	return success;
@@ -1287,7 +1295,7 @@ static void xds110_swd_read_reg(uint8_t cmd, uint32_t *value,
 {
 	xds110_swd_queue_cmd(cmd, value);
 }
- static void xds110_swd_write_reg(uint8_t cmd, uint32_t value,
+static void xds110_swd_write_reg(uint8_t cmd, uint32_t value,
 	uint32_t ap_delay_clk)
 {
 	xds110_swd_queue_cmd(cmd, &value);
@@ -1364,7 +1372,8 @@ static int xds110_init(void)
 	if (success) {
 		/* Send connect message to XDS110 firmware */
 		success = xds_connect();
-		if (success) xds110.is_connected = true;
+		if (success)
+			xds110.is_connected = true;
 	}
 
 	if (success) {
@@ -1408,6 +1417,7 @@ static int xds110_init(void)
 
 		/* Acquire exclusive access to CMAPI interface */
 		if (success) {
+			xds110.is_cmapi_connected = true;
 			success = cmapi_acquire();
 			if (success)
 				xds110.is_cmapi_acquired = true;
@@ -1426,32 +1436,19 @@ static int xds110_init(void)
 static void xds110_legacy_scan(uint32_t shift_state, uint32_t total_bits,
 	uint32_t end_state, uint8_t *data_out, uint8_t *data_in)
 {
-	uint32_t total_bytes;
-
-	if (total_bits == 0)
-		return;
-
-	total_bytes = DIV_ROUND_UP(total_bits, 8);
-
-	(void)xds_jtag_scan(total_bits, shift_state, XDS_JTAG_TRANSIT_QUICKEST,
-		end_state, XDS_JTAG_TRANSIT_QUICKEST, 0, 0, 0, 1, total_bytes,
-		total_bytes, data_out, data_in, total_bytes, total_bytes);
-
-	return;
+	(void)xds_jtag_scan(shift_state, total_bits, end_state, data_out, data_in);
 }
 
 static void xds110_legacy_runtest(uint32_t clocks, uint32_t end_state)
 {
-	xds_goto_state(XDS_JTAG_STATE_IDLE, XDS_JTAG_TRANSIT_QUICKEST);
+	xds_goto_state(XDS_JTAG_STATE_IDLE);
 	xds_cycle_tck(clocks);
-	xds_goto_state(end_state, XDS_JTAG_TRANSIT_QUICKEST);
-	return;
+	xds_goto_state(end_state);
 }
 
 static void xds110_legacy_stableclocks(uint32_t clocks)
 {
 	xds_cycle_tck(clocks);
-	return;
 }
 
 static void xds110_flush(void)
@@ -1475,7 +1472,7 @@ static void xds110_flush(void)
 	xds110.txn_requests[xds110.txn_request_size++] = 0;
 
 	if (xds110.firmware >= OCD_FIRMWARE_VERSION) {
-		/* XDS110 firmware has the API to directly handle the queue */
+		/* Updated firmware has the API to directly handle the queue */
 		(void)ocd_scan_request(xds110.txn_requests, xds110.txn_request_size,
 			data_in, xds110.txn_result_size);
 	} else {
@@ -1583,7 +1580,7 @@ static void xds110_execute_sleep(struct jtag_command *cmd)
 
 static void xds110_execute_tlr_reset(struct jtag_command *cmd)
 {
-	(void)xds_goto_state(XDS_JTAG_STATE_RESET, XDS_JTAG_TRANSIT_QUICKEST);
+	(void)xds_goto_state(XDS_JTAG_STATE_RESET);
 
 	return;
 }
@@ -1708,9 +1705,6 @@ static void xds110_queue_runtest(struct jtag_command *cmd)
 		> MAX_DATA_BLOCK)
 		xds110_flush();
 
-	clocks = (uint32_t)cmd->cmd.stableclocks->num_cycles;
-	end_state = (uint8_t)xds_jtag_state[cmd->cmd.runtest->end_state];
-
 	/* Queue request and cycle count directly to queue buffer */
 	xds110.txn_requests[xds110.txn_request_size++] = CMD_RUNTEST;
 	xds110.txn_requests[xds110.txn_request_size++] = (clocks >>  0) & 0xff;
@@ -1780,7 +1774,7 @@ static int xds110_execute_queue(void)
 {
 	struct jtag_command *cmd = jtag_command_queue;
 
-	while (cmd != 0) {
+	while (cmd != NULL) {
 		xds110_execute_command(cmd);
 		cmd = cmd->next;
 	}
@@ -1911,9 +1905,9 @@ COMMAND_HANDLER(xds110_handle_serial_command)
 			return ERROR_FAIL;
 		}
 
-		for (uint32_t i = 0; i < len; i++) {
+		for (uint32_t i = 0; i < len; i++)
 			xds110.serial[i] = (char)serial[i];
-		}
+
 		xds110.serial[len] = 0;
 	} else {
 		LOG_ERROR("XDS110: expected exactly one argument to xds110_serial "
