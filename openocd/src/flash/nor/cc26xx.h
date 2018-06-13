@@ -34,34 +34,31 @@
 #define USER_ID_CC13_MASK 0x00800000
 
 /* Common CC26xx/CC13xx flash and memory parameters */
-#define CC26XX_FLASH_BASE_ADDR          0x00000000
-#define CC26XX_FLASH_SIZE_INFO          0x4003002c
-#define CC26XX_SRAM_SIZE_INFO           0x40082250
-#define CC26XX_MAX_SECTOR_COUNT         128
-#define CC26XX_ALGO_BASE_ADDRESS        0x20000000
-#define CC26XX_CHAMELEON_SECTOR_LENGTH  0x1000
-#define CC26XX_CHAMELEON_ALGO_ENTRY     0x20000a80
-#define CC26XX_CHAMELEON_ALGO_BUFFER_0  0x20001c00
-#define CC26XX_CHAMELEON_ALGO_BUFFER_1  0x20002c00
-#define CC26XX_CHAMELEON_ALGO_PARAMS_0  0x20000abc
-#define CC26XX_CHAMELEON_ALGO_PARAMS_1  0x20000ad0
-#define CC26XX_CHAMELEON_ALGO_STATUS_0  (CC26XX_CHAMELEON_ALGO_PARAMS_0 + 0x0c)
-#define CC26XX_CHAMELEON_ALGO_STATUS_1  (CC26XX_CHAMELEON_ALGO_PARAMS_1 + 0x0c)
-#define CC26XX_CHAMELEON_WORKING_SIZE \
-	(CC26XX_CHAMELEON_ALGO_BUFFER_1 + CC26XX_CHAMELEON_SECTOR_LENGTH - \
-	CC26XX_ALGO_BASE_ADDRESS)
-#define CC26XX_AGAMA_SECTOR_LENGTH  0x2000
-#define CC26XX_AGAMA_ALGO_ENTRY     0x20000abc
-#define CC26XX_AGAMA_ALGO_BUFFER_0  0x20003000
-#define CC26XX_AGAMA_ALGO_BUFFER_1  0x20005000
-#define CC26XX_AGAMA_ALGO_PARAMS_0  0x20000b7c
-#define CC26XX_AGAMA_ALGO_PARAMS_1  0x20000b90
-#define CC26XX_AGAMA_ALGO_STATUS_0  (CC26XX_AGAMA_ALGO_PARAMS_0 + 0x0c)
-#define CC26XX_AGAMA_ALGO_STATUS_1  (CC26XX_AGAMA_ALGO_PARAMS_1 + 0x0c)
-#define CC26XX_AGAMA_WORKING_SIZE \
-	(CC26XX_AGAMA_ALGO_BUFFER_1 + CC26XX_AGAMA_SECTOR_LENGTH - \
-	CC26XX_ALGO_BASE_ADDRESS)
-	
+#define CC26XX_FLASH_BASE_ADDR   0x00000000
+#define CC26XX_FLASH_SIZE_INFO   0x4003002c
+#define CC26XX_SRAM_SIZE_INFO    0x40082250
+#define CC26XX_ALGO_BASE_ADDRESS 0x20000000
+
+/* Chameleon CC26x0/CC13x0 specific parameters */
+#define CC26X0_MAX_SECTORS   32
+#define CC26X0_SECTOR_LENGTH 0x1000
+#define CC26X0_ALGO_BUFFER_0 0x20001c00
+#define CC26X0_ALGO_BUFFER_1 0x20002c00
+#define CC26X0_ALGO_PARAMS_0 0x20001bd8
+#define CC26X0_ALGO_PARAMS_1 0x20001bec
+#define CC26X0_WORKING_SIZE  (CC26X0_ALGO_BUFFER_1 + CC26X0_SECTOR_LENGTH - \
+							 CC26XX_ALGO_BASE_ADDRESS)
+
+/* Agama CC26x2/CC13x2 specific parameters */
+#define CC26X2_MAX_SECTORS   128
+#define CC26X2_SECTOR_LENGTH 0x2000
+#define CC26X2_ALGO_BUFFER_0 0x20002000
+#define CC26X2_ALGO_BUFFER_1 0x20004000
+#define CC26X2_ALGO_PARAMS_0 0x20001fd8
+#define CC26X2_ALGO_PARAMS_1 0x20001fec
+#define CC26X2_WORKING_SIZE  (CC26X2_ALGO_BUFFER_1 + CC26X2_SECTOR_LENGTH - \
+							 CC26XX_ALGO_BASE_ADDRESS)
+
 /* CC26xx flash helper algorithm buffer flags */
 #define CC26XX_BUFFER_EMPTY 0x00000000
 #define CC26XX_BUFFER_FULL  0xffffffff
@@ -72,6 +69,7 @@
 #define CC26XX_CMD_PROGRAM                       2
 #define CC26XX_CMD_ERASE_AND_PROGRAM             3
 #define CC26XX_CMD_ERASE_AND_PROGRAM_WITH_RETAIN 4
+#define CC26XX_CMD_ERASE_SECTORS                 5
 
 /* CC26xx and CC13xx device types */
 #define CC26XX_NO_TYPE 0 /* Device type not determined yet */
@@ -82,22 +80,22 @@
 #define CC13X2_TYPE    5 /* CC13x2 Agama device */
 
 /* Flash helper algorithm parameter block struct */
+#define CC26XX_STATUS_OFFSET 0x0c
 struct cc26xx_algo_params {
-	volatile uint32_t address;
-	volatile uint32_t length;
-	volatile uint32_t command;
-	volatile uint32_t status;
-	volatile uint32_t buffer;
+	uint8_t address[4];
+	uint8_t length[4];
+	uint8_t command[4];
+	uint8_t status[4];
 };
 
-/* Flash helper algorithm for CC26xx Chameleon targets */
-const uint8_t cc26xx_chameleon_algo[] = {
-#include "../../../contrib/loaders/flash/cc26xx/cc26xx_chameleon_algo.inc"
+/* Flash helper algorithm for CC26x0 Chameleon targets */
+const uint8_t cc26x0_algo[] = {
+#include "../../../contrib/loaders/flash/cc26xx/cc26x0_algo.inc"
 };
 
-/* Flash helper algorithm for CC26xx Agama targets */
-const uint8_t cc26xx_agama_algo[] = {
-#include "../../../contrib/loaders/flash/cc26xx/cc26xx_agama_algo.inc"
+/* Flash helper algorithm for CC26x2 Agama targets */
+const uint8_t cc26x2_algo[] = {
+#include "../../../contrib/loaders/flash/cc26xx/cc26x2_algo.inc"
 };
 
 #endif /* OPENOCD_FLASH_NOR_CC26XX_H */
