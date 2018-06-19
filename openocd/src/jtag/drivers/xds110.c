@@ -1569,6 +1569,9 @@ static void xds110_execute_reset(struct jtag_command *cmd)
 			srst = 0;
 		}
 		(void)xds_set_srst(srst);
+
+		/* Toggle TCK to trigger HIB on CC13x/CC26x devices */
+		(void)xds_cycle_tck(60000);
 	}
 }
 
