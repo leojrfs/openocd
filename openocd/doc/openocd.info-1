@@ -1,7 +1,7 @@
 This is openocd.info, produced by makeinfo version 6.1 from
 openocd.texi.
 
-This User's Guide documents release 0.10.0, dated 13 June 2018, of the
+This User's Guide documents release 0.10.0, dated 19 June 2018, of the
 Open On-Chip Debugger (OpenOCD).
 
    * Copyright (C) 2008 The OpenOCD Project
@@ -27,7 +27,7 @@ File: openocd.info,  Node: Top,  Next: About,  Up: (dir)
 OpenOCD User's Guide
 ********************
 
-This User's Guide documents release 0.10.0, dated 13 June 2018, of the
+This User's Guide documents release 0.10.0, dated 19 June 2018, of the
 Open On-Chip Debugger (OpenOCD).
 
    * Copyright (C) 2008 The OpenOCD Project
@@ -528,6 +528,12 @@ connecting debuggers to ARM Cortex based targets
    * TI XDS110 Debug Probe
      The XDS110 is included as the embedded debug probe on many Texas
      Instruments LaunchPad evaluation boards.
+     The XDS110 is also available as a stand-alone USB debug probe.  The
+     XDS110 stand-alone probe has the additional ability to supply
+     voltage to the target board via its AUX FUNCTIONS port.  Use the
+     'xds110_supply_voltage <millivolts>' command to set the voltage.  0
+     turns off the supply.  Otherwise, the supply can be set to any
+     value in the range 1800 to 3600 millivolts.
      Link: <http://processors.wiki.ti.com/index.php/XDS110>
      Link:
      <http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS110_Support_Utilities>
